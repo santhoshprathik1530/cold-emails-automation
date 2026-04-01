@@ -1,0 +1,259 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        176,
+        0
+      ],
+      "id": "79a7c0aa-1f19-49e2-8ef2-1b6c43296de7",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1NhOynJ9D6rbiSt-fPq6oZJ1bJmK6EZBgl87gXpmTnDo/edit?usp=sharing",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "queue",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1NhOynJ9D6rbiSt-fPq6oZJ1bJmK6EZBgl87gXpmTnDo/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        416,
+        0
+      ],
+      "id": "0a125177-b8e5-421b-81b0-dfe62837e221",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "e6cblMjKHgCL8ucY",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.email }}",
+        "subject": "={{ $json.subject }}",
+        "message": "={{ $json.body }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1568,
+        -16
+      ],
+      "id": "4f9cf8e1-5942-42d2-8ea8-7d85d5f24e94",
+      "name": "Send a message",
+      "webhookId": "945b9c9c-4bbe-433c-bbaf-0e6f359204e7",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "WzoFFE9fjLKhndMQ",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO email_tracking\n(tracking_id, name, company, recipient_email, sent_at)\nVALUES\n(\n'{{ $json.tracking_id }}',\n'{{ $json.name }}',\n'{{ $json.company }}',\n'{{ $json.email }}',\nNOW() AT TIME ZONE 'America/Chicago'\n);",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        848,
+        336
+      ],
+      "id": "cbfdc5e1-726f-45fd-aed7-bbcb190ff47e",
+      "name": "Execute a SQL query",
+      "credentials": {
+        "postgres": {
+          "id": "QGvbMi8WzyMrUpWX",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "documentURL": "https://docs.google.com/document/d/1swjKYvA1yvtw-uccCy3OM6ky-gcscxMQxQtjlqsbKUA/edit?usp=sharing"
+      },
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        864,
+        -208
+      ],
+      "id": "73fa2eee-2424-42b3-b303-2e90e14acc68",
+      "name": "Get a document",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "QwoUH7vGiAhlkrDB",
+          "name": "Google Docs account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const template = $input.first().json.content;\n\nconst rows = $input.all();\n\nconst results = [];\n\nfor (const item of rows) {\n\n  const name = item.json.name;\n  const company = item.json.company;\n  const email = item.json.email;\n  const trackingId = item.json.tracking_id;\n\n  const resume = `https://sxwnfvrngfdabzbfuhty.supabase.co/functions/v1/resume-open?id=${trackingId}`;\n  const linkedin = `https://sxwnfvrngfdabzbfuhty.supabase.co/functions/v1/linkedin-open?id=${trackingId}`;\n  const website = `https://sxwnfvrngfdabzbfuhty.supabase.co/functions/v1/website-open?id=${trackingId}`;\n\n  let body = template\n    .replace(\"<name>\", name)\n    .replace(\"<company_name>\", company)\n    .replace(\"<resume_url>\", `<a href=\"${resume}\">Click here</a>`)\n    .replace(\"<linkedin_url>\", `<a href=\"${linkedin}\">Click here</a>`)\n    .replace(\"<website_url>\", `<a href=\"${website}\">Click here</a>`);\n\n  body = body.replace(/\\r\\n/g, \"\\n\");\n  body = body.replace(/\\n\\s*\\n/g, \"<br><br>\");\n  body = body.replace(/\\n/g, \"<br>\");\n\n  body += `<img src=\"https://sxwnfvrngfdabzbfuhty.supabase.co/functions/v1/email-open?id=${trackingId}\" width=\"1\" height=\"1\" style=\"display:none;\">`;\n\n  body = `<html><body style=\"font-family: Arial; font-size:14px; line-height:1.7;\">${body}</body></html>`;\n\n  const subject = `Summer Internship 2026 Inquiry - Analytics, Data Science & AI`;\n\n  results.push({\n    json: {\n      email,\n      subject,\n      body,\n      name,\n      company,\n      trackingId,\n      row_number: item.json.row_number\n    }\n  });\n}\n\nreturn results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1328,
+        -16
+      ],
+      "id": "5196f341-a400-4f4b-94cd-3037371b3cea",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1489a1a9-c8ae-451b-bef8-94f91ca7f74d",
+              "name": "tracking_id",
+              "value": "={{ Date.now().toString() + '_' + Math.random().toString(36).slice(2,8) }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        624,
+        0
+      ],
+      "id": "48d0cab3-0e6d-45cd-88c8-02964ff14960",
+      "name": "Generate Tracking ID"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1072,
+        -16
+      ],
+      "id": "610f3219-93ea-4754-b526-96b2d65803fe",
+      "name": "Merge"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Generate Tracking ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        []
+      ]
+    },
+    "Get a document": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Tracking ID": {
+      "main": [
+        [
+          {
+            "node": "Get a document",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Execute a SQL query",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "57f00637-ed00-4a56-b09a-efd7a69f724f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9e568d71869ae132332c15e27b7ba67aeb7a63cf7747d11ae6e2b075c999ef80"
+  },
+  "id": "uDxYYbSW3D003lN2",
+  "tags": []
+}
