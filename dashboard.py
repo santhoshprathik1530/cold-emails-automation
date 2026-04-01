@@ -259,20 +259,20 @@ ch1, ch2, ch3 = st.columns(3)
 with ch1:
     st.markdown('<p class="section-label">Open Rate</p>', unsafe_allow_html=True)
     st.bar_chart(
-        pd.DataFrame({"": ["Opened", "Not Opened"], "n": [opened, total - opened]}).set_index(""),
+        pd.DataFrame({"Status": ["Opened", "Not Opened"], "Count": [opened, total - opened]}).set_index("Status"),
         color=["#3ecf8e"], height=180
     )
 with ch2:
     st.markdown('<p class="section-label">Link Engagement</p>', unsafe_allow_html=True)
     st.bar_chart(
-        pd.DataFrame({"": ["Resume", "LinkedIn", "Website", "All 3"], "n": [resume, linkedin, website, viewed_all]}).set_index(""),
+        pd.DataFrame({"Link": ["Resume", "LinkedIn", "Website", "All 3"], "Count": [resume, linkedin, website, viewed_all]}).set_index("Link"),
         color=["#6366f1"], height=180
     )
 with ch3:
     st.markdown('<p class="section-label">Outreach by Company</p>', unsafe_allow_html=True)
     st.bar_chart(
-        df.groupby("company").size().reset_index(name="n")
-          .sort_values("n", ascending=False).head(6).set_index("company"),
+        df.groupby("company").size().reset_index(name="Count")
+          .sort_values("Count", ascending=False).head(6).set_index("company"),
         color=["#f59e0b"], height=180
     )
 
