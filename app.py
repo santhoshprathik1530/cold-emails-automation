@@ -124,34 +124,13 @@ button[data-baseweb="tab"][aria-selected="true"] { color: #e2e4ed !important; }
 # CONFIG HELPERS
 # ─────────────────────────────────────────────────────────────────────────────
 
-SETTINGS_FILE = os.path.join(os.path.dirname(__file__), ".app_settings.json")
-
-
-def _load_settings() -> dict:
-    try:
-        with open(SETTINGS_FILE) as f:
-            return json.load(f)
-    except Exception:
-        return {}
-
-
-def _save_settings(d: dict):
-    existing = _load_settings()
-    existing.update(d)
-    with open(SETTINGS_FILE, "w") as f:
-        json.dump(existing, f, indent=2)
-
-
 def _cfg(key: str, fallback: str = "") -> str:
-    """Priority: env var -> settings file -> Streamlit secrets -> fallback."""
+    """Priority: env var -> Streamlit secrets -> fallback."""
     env_val = os.getenv(key.upper())
     if env_val:
         return env_val
-    s = _load_settings()
-    if key.lower() in s:
-        return s[key.lower()]
     try:
-        return st.secrets.get(key.lower(), fallback)
+        return st.secrets.get(key.upper(), st.secrets.get(key.lower(), fallback))
     except Exception:
         return fallback
 
@@ -478,11 +457,10 @@ with h3:
 
 st.markdown('<hr class="divider">', unsafe_allow_html=True)
 
-tab_find, tab_send, tab_dash, tab_settings = st.tabs([
+tab_find, tab_send, tab_dash = st.tabs([
     "🔍  Find",
     "📧  Send",
     "📊  Dashboard",
-    "⚙️  Settings",
 ])
 
 
@@ -812,9 +790,25 @@ with tab_find:
 
 with tab_send:
 
+    if not _is_authenticated():
+        st.markdown(
+            '<div style="text-align:center;padding:4rem 0;">'
+            '<p style="color:#e2e4ed;font-size:1.1rem;font-weight:600;">🔒 Sign in required</p>'
+            '<p style="color:#4b5270;font-size:0.85rem;">Send and Dashboard are protected.</p>'
+            '</div>',
+            unsafe_allow_html=True,
+        )
+        sc1, sc2, sc3 = st.columns([2, 1, 2])
+        with sc2:
+            if st.button("🔒 Sign in", type="primary", use_container_width=True, key="send_gate_login_btn"):
+                _show_login_dialog()
+
+if _is_authenticated():
+  with tab_send:
+
     if not gmail_ok():
         st.warning(
-            "Gmail is not connected. Go to the **Settings** tab to connect your Gmail account.",
+            "Gmail is not connected. Please check your Gmail token in Streamlit secrets.",
             icon="⚠️",
         )
 
@@ -844,7 +838,7 @@ with tab_send:
                 unsafe_allow_html=True,
             )
         else:
-            st.warning("Set your name in Settings.", icon="ℹ️")
+            st.warning("Set SENDER_NAME in your Streamlit secrets.", icon="ℹ️")
 
     # ── Template editor ──────────────────────────────────────────────────────
     st.markdown('<hr class="divider">', unsafe_allow_html=True)
@@ -1158,10 +1152,26 @@ with tab_send:
 
 with tab_dash:
 
+    if not _is_authenticated():
+        st.markdown(
+            '<div style="text-align:center;padding:4rem 0;">'
+            '<p style="color:#e2e4ed;font-size:1.1rem;font-weight:600;">🔒 Sign in required</p>'
+            '<p style="color:#4b5270;font-size:0.85rem;">Send and Dashboard are protected.</p>'
+            '</div>',
+            unsafe_allow_html=True,
+        )
+        dc1, dc2, dc3 = st.columns([2, 1, 2])
+        with dc2:
+            if st.button("🔒 Sign in", type="primary", use_container_width=True, key="dash_gate_login_btn"):
+                _show_login_dialog()
+
+if _is_authenticated():
+  with tab_dash:
+
     # ── Fetch data ───────────────────────────────────────────────────────────
     def _fetch_tracking() -> tuple[list | None, str | None]:
         if not SB_URL or not SB_KEY:
-            return None, "Supabase credentials missing — check Settings."
+            return None, "Supabase credentials missing — check Streamlit secrets."
         try:
             r = req.get(
                 f"{SB_URL}/rest/v1/email_sends?select=*&order=sent_at.desc",
@@ -1481,124 +1491,3 @@ with tab_dash:
                 '<p style="color:#3ecf8e;font-size:0.85rem;">✓ No follow-ups needed right now</p>',
                 unsafe_allow_html=True,
             )
-
-
-# ═════════════════════════════════════════════════════════════════════════════
-# TAB 4 — SETTINGS
-# ═════════════════════════════════════════════════════════════════════════════
-
-with tab_settings:
-
-    st.markdown('<p class="sec">Gmail</p>', unsafe_allow_html=True)
-
-    gmail_addr = gmail_sender_addr()
-    st.markdown(
-        f'<p style="color:#3ecf8e;font-size:0.9rem;">✓ Connected as <strong>{gmail_addr}</strong></p>',
-        unsafe_allow_html=True,
-    )
-    if st.button("Disconnect Gmail", key="gmail_disconnect"):
-        if os.path.exists(_TOKEN_FILE):
-            os.remove(_TOKEN_FILE)
-        st.warning("Disconnected — reload the page to reconnect.")
-        st.rerun()
-
-    st.markdown('<hr class="divider">', unsafe_allow_html=True)
-
-    # ── Personal info ─────────────────────────────────────────────────────────
-    st.markdown('<p class="sec">Your Information (used in email templates)</p>', unsafe_allow_html=True)
-
-    sn1, sn2 = st.columns(2)
-    with sn1:
-        new_sender_name = st.text_input("Your Name", value=_cfg("SENDER_NAME", ""), key="st_sender")
-    with sn2:
-        new_tracking_url = st.text_input(
-            "Tracking Server URL",
-            value=_cfg("TRACKING_URL", _SB_FN_BASE),
-            help="Supabase Edge Function URL is used by default — works globally for all email recipients.",
-            key="st_tracking",
-        )
-
-    sl1, sl2, sl3 = st.columns(3)
-    with sl1:
-        new_resume = st.text_input("Resume URL", value=_cfg("RESUME_URL", ""), key="st_resume",
-                                   placeholder="https://...")
-    with sl2:
-        new_linkedin = st.text_input("LinkedIn URL", value=_cfg("LINKEDIN_URL", ""), key="st_linkedin",
-                                     placeholder="https://linkedin.com/in/...")
-    with sl3:
-        new_website = st.text_input("Portfolio/Website URL", value=_cfg("WEBSITE_URL", ""), key="st_website",
-                                    placeholder="https://...")
-
-    if st.button("💾 Save Settings", type="primary", key="save_settings"):
-        _save_settings({
-            "sender_name":  new_sender_name,
-            "tracking_url": new_tracking_url,
-            "resume_url":   new_resume,
-            "linkedin_url": new_linkedin,
-            "website_url":  new_website,
-        })
-        st.success("✅ Settings saved — they'll take effect on next interaction.")
-
-    st.markdown('<hr class="divider">', unsafe_allow_html=True)
-
-    # ── API credentials ───────────────────────────────────────────────────────
-    st.markdown('<p class="sec">API Credentials</p>', unsafe_allow_html=True)
-    st.caption(
-        "These can also be set in a `.env` file or `~/.streamlit/secrets.toml`. "
-        "Values saved here are stored in `.app_settings.json` in the app folder."
-    )
-
-    cr1, cr2 = st.columns(2)
-    with cr1:
-        new_apollo = st.text_input("Apollo API Key", value=_cfg("APOLLO_API_KEY", ""), type="password", key="st_apollo")
-        new_sb_url = st.text_input("Supabase URL", value=_cfg("SUPABASE_URL", ""), key="st_sburl",
-                                   placeholder="https://xxx.supabase.co")
-    with cr2:
-        new_sb_key = st.text_input("Supabase Anon Key", value=_cfg("SUPABASE_KEY", ""), type="password", key="st_sbkey")
-
-    if st.button("💾 Save Credentials", key="save_creds"):
-        _save_settings({
-            "apollo_api_key": new_apollo,
-            "supabase_url":   new_sb_url,
-            "supabase_key":   new_sb_key,
-        })
-        st.success("✅ Credentials saved.")
-
-    st.markdown('<hr class="divider">', unsafe_allow_html=True)
-
-    # ── Supabase schema note ──────────────────────────────────────────────────
-    st.markdown('<p class="sec">Supabase Tables</p>', unsafe_allow_html=True)
-    with st.expander("📋 First-time setup: Run supabase_schema.sql in your Supabase SQL editor"):
-        st.markdown(
-            "Go to **[supabase.com](https://supabase.com) → Your Project → SQL Editor → New Query**, "
-            "then paste and run the contents of `supabase_schema.sql` (included in this project folder). "
-            "This creates two fresh tables:"
-        )
-        st.code(
-            """-- TABLE 1: hr_contacts — Apollo HR contacts
-CREATE TABLE hr_contacts (
-  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  apollo_id       TEXT UNIQUE,
-  first_name      TEXT, last_name TEXT, name TEXT,
-  title TEXT, headline TEXT, email TEXT, email_status TEXT,
-  linkedin_url TEXT, photo_url TEXT, organization_id TEXT,
-  company TEXT, city TEXT, state TEXT, country TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- TABLE 2: email_sends — sent emails + open/click tracking
-CREATE TABLE email_sends (
-  id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  email_id            UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),
-  contact_id          UUID REFERENCES hr_contacts(id) ON DELETE SET NULL,
-  name TEXT, company TEXT, recipient_email TEXT NOT NULL, subject TEXT,
-  sent_at             TIMESTAMPTZ DEFAULT NOW(),
-  email_opened        BOOLEAN DEFAULT FALSE,
-  email_opened_count  INT DEFAULT 0,
-  last_opened_at      TIMESTAMPTZ,
-  resume_opened       BOOLEAN DEFAULT FALSE,
-  linkedin_opened     BOOLEAN DEFAULT FALSE,
-  website_opened      BOOLEAN DEFAULT FALSE
-);""",
-            language="sql",
-        )

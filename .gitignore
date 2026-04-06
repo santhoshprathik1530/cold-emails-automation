@@ -3,7 +3,6 @@
 .streamlit/secrets.toml
 gmail_credentials.json
 .gmail_token.json
-.app_settings.json
 
 # Python
 __pycache__/
