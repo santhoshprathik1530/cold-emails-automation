@@ -667,13 +667,16 @@ with tab_find:
             st.session_state.search_results  = results
             st.session_state.enriched_results = []
             st.session_state.select_all = False
+            st.session_state.pop("find_tbl", None)   # reset checkbox state for new results
             if results:
                 st.success(f"✅ Found {len(results)} contacts")
 
     if sel_all_btn:
         st.session_state.select_all = True
+        st.session_state.pop("find_tbl", None)   # clear delta edits so all rows render as checked
     if clear_btn:
         st.session_state.select_all = False
+        st.session_state.pop("find_tbl", None)   # clear delta edits so all rows render as unchecked
 
     if enrich_btn and st.session_state.search_results:
         if not _is_authenticated():
