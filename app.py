@@ -37,85 +37,211 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
-*, body, .stApp { font-family: 'Inter', sans-serif !important; }
-.stApp { background-color: #08090d; }
-#MainMenu, footer, header { visibility: hidden; }
-.block-container { padding-top: 2rem; padding-bottom: 2rem; }
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
+/* ── Base ──────────────────────────────────────────────────────────────── */
+*, body, .stApp { font-family: 'Inter', sans-serif !important; }
+.stApp { background: #06070b; }
+#MainMenu, footer, header { visibility: hidden; }
+.block-container { padding-top: 1.5rem; padding-bottom: 2rem; max-width: 1200px; }
+
+/* ── Scrollbar ─────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #1e2130; border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: #2a2f47; }
+
+/* ── Inputs ────────────────────────────────────────────────────────────── */
 div[data-baseweb="input"] input,
 div[data-baseweb="textarea"] textarea,
 div[data-baseweb="select"] {
-    background: #0f1117 !important; border-color: #1e2130 !important;
-    color: #e2e4ed !important; border-radius: 8px !important; font-size: 0.875rem !important;
+    background: #0c0d14 !important; border-color: #16182a !important;
+    color: #c8cce0 !important; border-radius: 10px !important;
+    font-size: 0.85rem !important; transition: border-color 0.2s;
 }
-div[data-baseweb="tag"] { background: #5a5fcf !important; border-radius: 4px !important; }
-input::placeholder, textarea::placeholder { color: #3a3f55 !important; }
+div[data-baseweb="input"] input:focus,
+div[data-baseweb="textarea"] textarea:focus {
+    border-color: #5a5fcf !important; box-shadow: 0 0 0 1px rgba(90,95,207,0.15) !important;
+}
+div[data-baseweb="tag"] { background: #393ea8 !important; border-radius: 6px !important; }
+input::placeholder, textarea::placeholder { color: #2a2f47 !important; }
 
 label, .stTextInput label, .stMultiSelect label,
 .stTextArea label, .stNumberInput label {
-    color: #3a3f55 !important; font-size: 0.7rem !important; font-weight: 600 !important;
-    letter-spacing: 0.08em !important; text-transform: uppercase !important;
+    color: #3a3f55 !important; font-size: 0.65rem !important; font-weight: 600 !important;
+    letter-spacing: 0.1em !important; text-transform: uppercase !important;
 }
 
+/* ── Buttons ───────────────────────────────────────────────────────────── */
 .stButton > button {
-    background: transparent; border: 1px solid #1e2130; color: #5a5f7a;
-    border-radius: 7px; font-size: 0.8rem; font-weight: 500;
-    padding: 0.45rem 1rem; transition: all 0.15s;
+    background: rgba(255,255,255,0.02); border: 1px solid #16182a; color: #5a5f7a;
+    border-radius: 10px; font-size: 0.78rem; font-weight: 500;
+    padding: 0.5rem 1.1rem; transition: all 0.2s ease;
 }
-.stButton > button:hover { border-color: #5a5fcf; color: #8486e0; background: #0f1117; }
+.stButton > button:hover {
+    border-color: #5a5fcf; color: #9fa3e8;
+    background: rgba(90,95,207,0.06); transform: translateY(-1px);
+}
 .stButton > button[kind="primary"] {
-    background: #5a5fcf; border-color: #5a5fcf; color: #fff; font-weight: 600;
+    background: linear-gradient(135deg, #5a5fcf 0%, #7c6fd4 100%);
+    border: none; color: #fff; font-weight: 600;
+    box-shadow: 0 2px 12px rgba(90,95,207,0.25);
 }
-.stButton > button[kind="primary"]:hover { background: #4a4fbf; border-color: #4a4fbf; }
-.stButton > button:disabled { opacity: 0.35 !important; cursor: not-allowed !important; }
+.stButton > button[kind="primary"]:hover {
+    background: linear-gradient(135deg, #4a4fbf 0%, #6c5fc4 100%);
+    box-shadow: 0 4px 20px rgba(90,95,207,0.35); transform: translateY(-1px);
+}
+.stButton > button:disabled { opacity: 0.3 !important; cursor: not-allowed !important; transform: none !important; }
 
 .stDownloadButton > button {
-    background: transparent !important; border: 1px solid #1e2130 !important;
-    color: #5a5f7a !important; border-radius: 7px !important; font-size: 0.78rem !important;
+    background: rgba(255,255,255,0.02) !important; border: 1px solid #16182a !important;
+    color: #5a5f7a !important; border-radius: 10px !important; font-size: 0.75rem !important;
 }
 
-.stDataFrame, [data-testid="stDataFrameResizable"] {
-    border: 1px solid #1e2130 !important; border-radius: 10px !important; overflow: hidden;
+/* ── Divider ───────────────────────────────────────────────────────────── */
+.divider { border: none; border-top: 1px solid #0f1120; margin: 1.8rem 0; }
+
+/* ── Cards & Metrics ───────────────────────────────────────────────────── */
+.glass-card {
+    background: linear-gradient(145deg, rgba(15,17,23,0.9), rgba(12,13,20,0.95));
+    border: 1px solid #14162a; border-radius: 14px;
+    padding: 1.6rem; backdrop-filter: blur(10px);
 }
-.divider { border: none; border-top: 1px solid #13151f; margin: 1.5rem 0; }
 
 .metric-wrap {
-    background: #0f1117; border: 1px solid #1c1f2e;
-    border-radius: 12px; padding: 1.2rem 1.4rem;
+    background: linear-gradient(145deg, #0c0d14, #0f1117);
+    border: 1px solid #14162a; border-radius: 14px; padding: 1.2rem 1.4rem;
+    transition: border-color 0.2s, transform 0.2s;
+    position: relative; overflow: hidden;
 }
+.metric-wrap:hover { border-color: #1e2240; transform: translateY(-2px); }
+.metric-wrap::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, #5a5fcf, transparent); opacity: 0;
+    transition: opacity 0.3s;
+}
+.metric-wrap:hover::before { opacity: 1; }
 .metric-label {
-    font-size: 0.72rem; font-weight: 500; letter-spacing: 0.08em;
-    text-transform: uppercase; color: #4b5270; margin-bottom: 0.5rem;
+    font-size: 0.65rem; font-weight: 600; letter-spacing: 0.1em;
+    text-transform: uppercase; color: #3a3f55; margin-bottom: 0.5rem;
 }
-.metric-value { font-size: 2rem; font-weight: 300; color: #e8eaf0; line-height: 1; }
-.metric-sub   { font-size: 0.75rem; color: #3ecf8e; font-weight: 500; }
+.metric-value { font-size: 1.9rem; font-weight: 300; color: #e8eaf0; line-height: 1; }
+.metric-sub   { font-size: 0.72rem; color: #3ecf8e; font-weight: 500; margin-top: 0.3rem; }
 .metric-sub.warn  { color: #f87171; }
-.metric-sub.muted { color: #4b5270; }
+.metric-sub.muted { color: #3a3f55; }
 
-.stat { background: #0f1117; border: 1px solid #1e2130; border-radius: 10px;
-        padding: 0.9rem 1.2rem; text-align: center; }
-.stat-n { font-size: 1.75rem; font-weight: 300; color: #e2e4ed; line-height: 1; }
-.stat-l { font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase;
+/* colored accent variants */
+.metric-wrap.accent-green  { border-left: 2px solid #3ecf8e; }
+.metric-wrap.accent-blue   { border-left: 2px solid #6366f1; }
+.metric-wrap.accent-amber  { border-left: 2px solid #f59e0b; }
+.metric-wrap.accent-red    { border-left: 2px solid #f87171; }
+.metric-wrap.accent-purple { border-left: 2px solid #a78bfa; }
+
+/* ── Stat mini-cards ───────────────────────────────────────────────────── */
+.stat {
+    background: linear-gradient(145deg, #0c0d14, #0f1117);
+    border: 1px solid #14162a; border-radius: 12px;
+    padding: 1rem 1.2rem; text-align: center;
+    transition: border-color 0.2s;
+}
+.stat:hover { border-color: #1e2240; }
+.stat-n { font-size: 1.6rem; font-weight: 300; color: #e2e4ed; line-height: 1; }
+.stat-l { font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase;
           color: #3a3f55; font-weight: 600; margin-top: 0.35rem; }
 
-.sec { font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase;
-       color: #3a3f55; font-weight: 600; margin-bottom: 0.6rem; }
+/* ── Section headings ──────────────────────────────────────────────────── */
+.sec {
+    font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase;
+    color: #3a3f55; font-weight: 600; margin-bottom: 0.6rem;
+}
+.sec-title {
+    font-size: 0.9rem; font-weight: 600; color: #c8cce0;
+    margin-bottom: 0.2rem; display: flex; align-items: center; gap: 0.5rem;
+}
+.sec-desc { font-size: 0.78rem; color: #3a3f55; margin-bottom: 1rem; }
 
+/* ── Step indicators ───────────────────────────────────────────────────── */
+.step-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 22px; height: 22px; border-radius: 7px; font-size: 0.65rem;
+    font-weight: 700; flex-shrink: 0;
+    background: linear-gradient(135deg, #5a5fcf, #7c6fd4); color: #fff;
+}
+
+/* ── Expanders ─────────────────────────────────────────────────────────── */
 div[data-testid="stExpander"] {
-    background: #0f1117; border: 1px solid #1c1f2e !important;
-    border-radius: 10px; margin-bottom: 0.5rem;
+    background: #0c0d14; border: 1px solid #14162a !important;
+    border-radius: 12px; margin-bottom: 0.5rem;
 }
 
+/* ── Pills / Status badges ─────────────────────────────────────────────── */
 .pill-status {
-    display: inline-block; padding: 0.18rem 0.7rem; border-radius: 999px;
-    font-size: 0.68rem; font-weight: 600; letter-spacing: 0.06em;
+    display: inline-block; padding: 0.2rem 0.75rem; border-radius: 999px;
+    font-size: 0.65rem; font-weight: 600; letter-spacing: 0.06em;
 }
-.pill-ok  { background: #0e2a1c; color: #3ecf8e; }
-.pill-err { background: #2a0e0e; color: #f87171; }
+.pill-ok  { background: rgba(62,207,142,0.1); color: #3ecf8e; border: 1px solid rgba(62,207,142,0.15); }
+.pill-err { background: rgba(248,113,113,0.1); color: #f87171; border: 1px solid rgba(248,113,113,0.15); }
 
-button[data-baseweb="tab"] { color: #3a3f55 !important; }
-button[data-baseweb="tab"][aria-selected="true"] { color: #e2e4ed !important; }
+/* ── Tabs ──────────────────────────────────────────────────────────────── */
+button[data-baseweb="tab"] {
+    color: #3a3f55 !important; font-weight: 500 !important;
+    font-size: 0.82rem !important; padding: 0.7rem 1.5rem !important;
+    transition: color 0.2s !important;
+}
+button[data-baseweb="tab"]:hover { color: #7a7fb0 !important; }
+button[data-baseweb="tab"][aria-selected="true"] {
+    color: #e2e4ed !important; font-weight: 600 !important;
+}
+div[data-baseweb="tab-highlight"] {
+    background-color: #5a5fcf !important; height: 2px !important; border-radius: 2px !important;
+}
+div[data-baseweb="tab-border"] { background-color: #0f1120 !important; }
+
+/* ── DataFrames ────────────────────────────────────────────────────────── */
+.stDataFrame, [data-testid="stDataFrameResizable"] {
+    border: 1px solid #14162a !important; border-radius: 12px !important; overflow: hidden;
+}
+
+/* ── Auth gate ─────────────────────────────────────────────────────────── */
+.auth-gate {
+    text-align: center; padding: 5rem 2rem;
+    background: radial-gradient(ellipse at center, rgba(90,95,207,0.04) 0%, transparent 70%);
+    border-radius: 20px;
+}
+.auth-gate-icon { font-size: 2.5rem; margin-bottom: 1rem; opacity: 0.8; }
+.auth-gate-title { color: #c8cce0; font-size: 1.1rem; font-weight: 600; margin-bottom: 0.3rem; }
+.auth-gate-sub { color: #3a3f55; font-size: 0.82rem; }
+
+/* ── Empty states ──────────────────────────────────────────────────────── */
+.empty-state {
+    text-align: center; padding: 4rem 2rem; color: #2a2f47; font-size: 0.85rem;
+}
+
+/* ── Brand ─────────────────────────────────────────────────────────────── */
+.brand-title {
+    font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; line-height: 1;
+    background: linear-gradient(135deg, #e2e4ed 0%, #9fa3e8 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+.brand-sub {
+    font-size: 0.75rem; color: #3a3f55; margin-top: 0.15rem;
+    letter-spacing: 0.02em;
+}
+.brand-pill {
+    display: inline-block; padding: 0.15rem 0.6rem; border-radius: 6px;
+    font-size: 0.6rem; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; background: rgba(90,95,207,0.1);
+    color: #7a7fb0; border: 1px solid rgba(90,95,207,0.15);
+}
+
+/* ── Progress bars ─────────────────────────────────────────────────────── */
+.stProgress > div > div { background: #14162a !important; border-radius: 10px; }
+.stProgress > div > div > div { background: linear-gradient(90deg, #5a5fcf, #7c6fd4) !important; border-radius: 10px; }
+
+/* ── Alerts ────────────────────────────────────────────────────────────── */
+div[data-baseweb="notification"] { border-radius: 10px !important; }
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -346,7 +472,7 @@ def _show_login_dialog():
     st.caption("This action requires authentication.")
     username = st.text_input("Username", key="login_username")
     password = st.text_input("Password", type="password", key="login_password")
-    if st.button("Sign in", type="primary", use_container_width=True):
+    if st.button("Sign in", type="primary", width="stretch"):
         if username == APP_USERNAME and password == APP_PASSWORD:
             st.session_state.authenticated = True
             st.rerun()
@@ -374,7 +500,10 @@ def _google_pkgs_ok() -> bool:
 
 if not _google_pkgs_ok():
     st.markdown(
-        '<h2 style="color:#e2e4ed;font-weight:600;">🚀 Cold Email Hub — Setup</h2>',
+        '<div style="padding:0.3rem 0;">'
+        '<p class="brand-title" style="font-size:1.8rem;">Cold Email Hub</p>'
+        '<p class="brand-sub">Setup required</p>'
+        '</div>',
         unsafe_allow_html=True,
     )
     st.error("Google API packages are not installed. Run the command below, then restart the app.")
@@ -384,24 +513,25 @@ if not _google_pkgs_ok():
 elif not os.path.exists(_TOKEN_FILE) and not st.secrets.get("gmail_token_json"):
     # Gmail not yet authorised — show a dedicated connect screen
     st.markdown(
-        '<h2 style="color:#e2e4ed;font-weight:600;margin-bottom:0;">🚀 Cold Email Hub</h2>'
-        '<p style="color:#3a3f55;font-size:0.8rem;margin-top:0.1rem;margin-bottom:2rem;">'
-        'One-time setup — connect your Gmail account to get started</p>',
+        '<div style="padding:0.3rem 0;">'
+        '<p class="brand-title" style="font-size:1.8rem;">Cold Email Hub</p>'
+        '<p class="brand-sub">One-time setup — connect your Gmail account to get started</p>'
+        '</div>',
         unsafe_allow_html=True,
     )
 
     col_card, _ = st.columns([2, 3])
     with col_card:
         st.markdown(
-            '<div style="background:#0f1117;border:1px solid #1e2130;border-radius:14px;padding:2rem;">'
-            '<p style="color:#e2e4ed;font-size:1rem;font-weight:600;margin-bottom:0.4rem;">Connect Gmail</p>'
-            '<p style="color:#4b5270;font-size:0.82rem;margin-bottom:1.5rem;">'
+            '<div class="glass-card">'
+            '<p style="color:#c8cce0;font-size:1rem;font-weight:600;margin-bottom:0.4rem;">Connect Gmail</p>'
+            '<p style="color:#3a3f55;font-size:0.82rem;margin-bottom:1.5rem;">'
             'The app will open a browser tab — sign in and allow access. '
             'Your token is saved locally and never leaves this machine.</p>'
             '</div>',
             unsafe_allow_html=True,
         )
-        if st.button("🔗 Connect Gmail", type="primary", use_container_width=True):
+        if st.button("🔗 Connect Gmail", type="primary", width="stretch"):
             with st.spinner("Opening browser for Gmail authorization…"):
                 try:
                     gmail_connect()
@@ -426,33 +556,39 @@ elif not os.path.exists(_TOKEN_FILE) and not st.secrets.get("gmail_token_json"):
 
 is_gmail = gmail_ok()
 gmail_pill = (
-    '<span class="pill-status pill-ok">● Gmail connected</span>'
+    '<span class="pill-status pill-ok">● Gmail</span>'
     if is_gmail
-    else '<span class="pill-status pill-err">● Gmail not connected</span>'
+    else '<span class="pill-status pill-err">● Gmail</span>'
+)
+auth_pill = (
+    '<span class="pill-status pill-ok">● Signed in</span>'
+    if _is_authenticated()
+    else '<span class="brand-pill">Guest</span>'
 )
 
 h1, h2, h3 = st.columns([6, 2, 1])
 with h1:
     st.markdown(
-        '<h2 style="color:#e2e4ed;font-weight:600;margin-bottom:0;">🚀 Cold Email Hub</h2>'
-        '<p style="color:#3a3f55;font-size:0.8rem;margin-top:0.1rem;">'
-        'Find contacts &nbsp;·&nbsp; Send emails &nbsp;·&nbsp; Track opens'
-        '</p>',
+        '<div style="padding:0.3rem 0;">'
+        '<p class="brand-title">Cold Email Hub</p>'
+        '<p class="brand-sub">Find contacts &nbsp;·&nbsp; Send emails &nbsp;·&nbsp; Track opens</p>'
+        '</div>',
         unsafe_allow_html=True,
     )
 with h2:
     st.markdown(
-        f'<p style="text-align:right;padding-top:1.2rem;">{gmail_pill}</p>',
+        f'<p style="text-align:right;padding-top:1rem;display:flex;gap:0.5rem;justify-content:flex-end;">'
+        f'{gmail_pill} {auth_pill}</p>',
         unsafe_allow_html=True,
     )
 with h3:
     st.markdown("<br>", unsafe_allow_html=True)
     if _is_authenticated():
-        if st.button("🔓 Sign out", use_container_width=True, key="signout_btn"):
+        if st.button("Sign out", width="stretch", key="signout_btn"):
             st.session_state.authenticated = False
             st.rerun()
     else:
-        if st.button("🔒 Sign in", use_container_width=True, key="signin_header_btn"):
+        if st.button("Sign in", width="stretch", key="signin_header_btn"):
             _show_login_dialog()
 
 st.markdown('<hr class="divider">', unsafe_allow_html=True)
@@ -572,7 +708,11 @@ with tab_find:
 
     # ── Company lookup UI ────────────────────────────────────────────────────
 
-    st.markdown('<p class="sec">Company Lookup — find Apollo Org ID by name</p>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="sec-title"><span class="step-badge">1</span> Company Lookup</div>'
+        '<p class="sec-desc">Find the Apollo Org ID for any company</p>',
+        unsafe_allow_html=True,
+    )
     cq1, cq2 = st.columns([4, 1])
     with cq1:
         company_q = st.text_input("Company name", placeholder="e.g. Google, Stripe, Duolingo", key="company_q")
@@ -591,7 +731,7 @@ with tab_find:
                 "Employees": o.get("estimated_num_employees", "—"),
                 "City":      o.get("city", "—"),
             } for o in orgs])
-            st.dataframe(org_df, use_container_width=True, hide_index=True)
+            st.dataframe(org_df, width="stretch", hide_index=True)
             st.caption("📋 Copy an Org ID from the table above and paste it into the field below.")
         else:
             st.warning("No companies found — try a shorter name.")
@@ -600,7 +740,11 @@ with tab_find:
 
     # ── People search UI ─────────────────────────────────────────────────────
 
-    st.markdown('<p class="sec">Search HR Contacts</p>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="sec-title"><span class="step-badge">2</span> Search HR Contacts</div>'
+        '<p class="sec-desc">Use Org IDs from above to find HR contacts with verified emails</p>',
+        unsafe_allow_html=True,
+    )
 
     fc1, fc2 = st.columns([4, 1])
     with fc1:
@@ -622,10 +766,10 @@ with tab_find:
     has_enriched = bool(st.session_state.enriched_results)
 
     b1, b2, b3, b4, _ = st.columns([1, 1, 1, 1, 3])
-    with b1: search_btn  = st.button("Search",     type="primary", use_container_width=True)
-    with b2: enrich_btn  = st.button("Enrich",     type="primary", use_container_width=True, disabled=not has_results)
-    with b3: sel_all_btn = st.button("Select All", use_container_width=True, disabled=not has_results)
-    with b4: clear_btn   = st.button("Clear",      use_container_width=True, disabled=not has_results)
+    with b1: search_btn  = st.button("Search",     type="primary", width="stretch")
+    with b2: enrich_btn  = st.button("Enrich",     type="primary", width="stretch", disabled=not has_results)
+    with b3: sel_all_btn = st.button("Select All", width="stretch", disabled=not has_results)
+    with b4: clear_btn   = st.button("Clear",      width="stretch", disabled=not has_results)
 
     st.markdown('<hr class="divider">', unsafe_allow_html=True)
 
@@ -652,9 +796,11 @@ with tab_find:
     if sel_all_btn:
         st.session_state.select_all = True
         st.session_state.pop("find_tbl", None)   # clear delta edits so all rows render as checked
+        st.rerun()
     if clear_btn:
         st.session_state.select_all = False
         st.session_state.pop("find_tbl", None)   # clear delta edits so all rows render as unchecked
+        st.rerun()
 
     if enrich_btn and st.session_state.search_results:
         if not _is_authenticated():
@@ -663,12 +809,17 @@ with tab_find:
 
         sel_state   = st.session_state.get("find_tbl", {})
         edited_rows = sel_state.get("edited_rows", {})
-        sel_indices = [int(i) for i, v in edited_rows.items() if v.get("✓")]
 
-        if st.session_state.select_all or not sel_indices:
-            to_enrich = st.session_state.search_results
+        if st.session_state.select_all:
+            # All selected — but honour any individual unchecks the user made
+            unchecked = {int(i) for i, v in edited_rows.items() if v.get("✓") is False}
+            to_enrich = [r for idx, r in enumerate(st.session_state.search_results)
+                         if idx not in unchecked]
         else:
-            to_enrich = [st.session_state.search_results[i] for i in sel_indices]
+            # Only individually checked rows
+            checked = [int(i) for i, v in edited_rows.items() if v.get("✓")]
+            to_enrich = ([st.session_state.search_results[i] for i in checked]
+                         if checked else st.session_state.search_results)
 
         with st.spinner(f"Enriching {len(to_enrich)} contacts (uses Apollo credits)..."):
             enriched = _enrich_people(to_enrich)
@@ -719,7 +870,7 @@ with tab_find:
 
         edited = st.data_editor(
             df1,
-            use_container_width=True,
+            width="stretch",
             hide_index=True,
             height=380,
             column_config={
@@ -743,7 +894,7 @@ with tab_find:
         # Enriched results table
         if enriched:
             st.markdown('<hr class="divider">', unsafe_allow_html=True)
-            st.markdown('<p class="sec">Enriched contacts</p>', unsafe_allow_html=True)
+            st.markdown('<div class="sec-title">✅ Enriched contacts</div>', unsafe_allow_html=True)
 
             df2 = pd.DataFrame([{
                 "Name":     (p.get("name") or "").strip().title() or "—",
@@ -757,7 +908,7 @@ with tab_find:
 
             st.dataframe(
                 df2,
-                use_container_width=True,
+                width="stretch",
                 hide_index=True,
                 height=380,
                 column_config={
@@ -778,8 +929,10 @@ with tab_find:
                     st.success(f"✅ {len(valid)} contacts queued — go to the Send tab")
     else:
         st.markdown(
-            '<p style="color:#3a3f55;text-align:center;padding:4rem 0;font-size:0.85rem;">'
-            'Use the Company Lookup above to find Org IDs, then hit Search</p>',
+            '<div class="empty-state">'
+            '<p style="font-size:1.5rem;margin-bottom:0.5rem;">🔍</p>'
+            '<p>Look up a company above to get its Org ID, then search for HR contacts</p>'
+            '</div>',
             unsafe_allow_html=True,
         )
 
@@ -792,15 +945,16 @@ with tab_send:
 
     if not _is_authenticated():
         st.markdown(
-            '<div style="text-align:center;padding:4rem 0;">'
-            '<p style="color:#e2e4ed;font-size:1.1rem;font-weight:600;">🔒 Sign in required</p>'
-            '<p style="color:#4b5270;font-size:0.85rem;">Send and Dashboard are protected.</p>'
+            '<div class="auth-gate">'
+            '<div class="auth-gate-icon">🔐</div>'
+            '<p class="auth-gate-title">Authentication required</p>'
+            '<p class="auth-gate-sub">Sign in to send emails and manage campaigns</p>'
             '</div>',
             unsafe_allow_html=True,
         )
         sc1, sc2, sc3 = st.columns([2, 1, 2])
         with sc2:
-            if st.button("🔒 Sign in", type="primary", use_container_width=True, key="send_gate_login_btn"):
+            if st.button("Sign in", type="primary", width="stretch", key="send_gate_login_btn"):
                 _show_login_dialog()
 
 if _is_authenticated():
@@ -819,8 +973,11 @@ if _is_authenticated():
     send_website  = _cfg("WEBSITE_URL", "")
     send_tracking = _cfg("TRACKING_URL", _SB_FN_BASE)
 
-    # ── Email configuration ──────────────────────────────────────────────────
-    st.markdown('<p class="sec">Email configuration</p>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="sec-title">✉️ Email configuration</div>'
+        '<p class="sec-desc">Subject line and sender identity</p>',
+        unsafe_allow_html=True,
+    )
 
     cfg1, cfg2 = st.columns([3, 2])
     with cfg1:
@@ -842,7 +999,11 @@ if _is_authenticated():
 
     # ── Template editor ──────────────────────────────────────────────────────
     st.markdown('<hr class="divider">', unsafe_allow_html=True)
-    st.markdown('<p class="sec">Email template</p>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="sec-title">📝 Email template</div>'
+        '<p class="sec-desc">Customize the HTML body sent to each contact</p>',
+        unsafe_allow_html=True,
+    )
     st.caption(
         "Variables: `{first_name}`, `{company}`, `{sender_name}`, "
         "`{resume_link}`, `{linkedin_link}`, `{website_link}`. "
@@ -860,7 +1021,10 @@ if _is_authenticated():
 
     # ── Contacts queue ───────────────────────────────────────────────────────
     st.markdown('<hr class="divider">', unsafe_allow_html=True)
-    st.markdown('<p class="sec">Contacts to email</p>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="sec-title">👥 Contacts to email</div>',
+        unsafe_allow_html=True,
+    )
 
     src_col1, src_col2 = st.columns([2, 2])
     with src_col1:
@@ -924,7 +1088,7 @@ if _is_authenticated():
 
         edited_send = st.data_editor(
             send_df,
-            use_container_width=True,
+            width="stretch",
             hide_index=True,
             height=360,
             column_config={
@@ -951,7 +1115,7 @@ if _is_authenticated():
 
         # ── Preview + Send / Schedule buttons ────────────────────────────────
         st.markdown('<hr class="divider">', unsafe_allow_html=True)
-        st.markdown('<p class="sec">Send options</p>', unsafe_allow_html=True)
+        st.markdown('<div class="sec-title">🚀 Send options</div>', unsafe_allow_html=True)
 
         send_mode = st.radio(
             "Send mode",
@@ -994,7 +1158,7 @@ if _is_authenticated():
                 send_all_btn = st.button(
                     send_label,
                     type="primary",
-                    use_container_width=True,
+                    width="stretch",
                     key="send_all_btn",
                     disabled=not selected_contacts or not gmail_ok(),
                 )
@@ -1005,7 +1169,7 @@ if _is_authenticated():
                 schedule_btn = st.button(
                     schedule_label,
                     type="primary",
-                    use_container_width=True,
+                    width="stretch",
                     key="schedule_btn",
                     disabled=not selected_contacts or not SB_URL,
                 )
@@ -1022,7 +1186,7 @@ if _is_authenticated():
             )
             with st.expander(f"Preview — {c.get('name', '')} at {company}", expanded=True):
                 st.markdown(
-                    f'<div style="background:#0f1117;border:1px solid #1e2130;border-radius:8px;padding:1.5rem;">'
+                    f'<div class="glass-card" style="padding:1.5rem;">'
                     f'{preview_html}</div>',
                     unsafe_allow_html=True,
                 )
@@ -1154,15 +1318,16 @@ with tab_dash:
 
     if not _is_authenticated():
         st.markdown(
-            '<div style="text-align:center;padding:4rem 0;">'
-            '<p style="color:#e2e4ed;font-size:1.1rem;font-weight:600;">🔒 Sign in required</p>'
-            '<p style="color:#4b5270;font-size:0.85rem;">Send and Dashboard are protected.</p>'
+            '<div class="auth-gate">'
+            '<div class="auth-gate-icon">📊</div>'
+            '<p class="auth-gate-title">Authentication required</p>'
+            '<p class="auth-gate-sub">Sign in to view your outreach dashboard</p>'
             '</div>',
             unsafe_allow_html=True,
         )
         dc1, dc2, dc3 = st.columns([2, 1, 2])
         with dc2:
-            if st.button("🔒 Sign in", type="primary", use_container_width=True, key="dash_gate_login_btn"):
+            if st.button("Sign in", type="primary", width="stretch", key="dash_gate_login_btn"):
                 _show_login_dialog()
 
 if _is_authenticated():
@@ -1191,15 +1356,13 @@ if _is_authenticated():
     dh1, dh2, dh3 = st.columns([6, 1, 2])
     with dh1:
         st.markdown(
-            '## Hunt Tracker'
-            f'<p style="color:#4b5270;font-size:0.82rem;margin-top:-0.4rem;">'
-            f'Internship cold email dashboard &nbsp;·&nbsp; {datetime.now(CDT).strftime("%b %d, %Y")}'
-            f'</p>',
+            '<div class="sec-title" style="font-size:1.1rem;">📊 Hunt Tracker</div>'
+            f'<p class="sec-desc">Internship cold email dashboard &nbsp;·&nbsp; {datetime.now(CDT).strftime("%b %d, %Y")}</p>',
             unsafe_allow_html=True,
         )
     with dh2:
         st.markdown("<br>", unsafe_allow_html=True)
-        if st.button("↻ Refresh", type="primary", use_container_width=True, key="dash_refresh"):
+        if st.button("↻ Refresh", type="primary", width="stretch", key="dash_refresh"):
             data, err = _fetch_tracking()
             if data is not None:
                 st.session_state.dash_data = data
@@ -1208,7 +1371,7 @@ if _is_authenticated():
 
     with dh3:
         st.markdown("<br>", unsafe_allow_html=True)
-        if st.button("📤 Send Scheduled", use_container_width=True, key="send_scheduled_btn"):
+        if st.button("📤 Send Scheduled", width="stretch", key="send_scheduled_btn"):
             now_cdt = datetime.now(CDT).isoformat()
             try:
                 due_r = req.get(
@@ -1297,10 +1460,11 @@ if _is_authenticated():
         followup   = int(df["needs_followup"].sum())
 
         # ── Metric cards ─────────────────────────────────────────────────────────
-        def _card(label, value, sub="", warn=False, muted=False):
+        def _card(label, value, sub="", warn=False, muted=False, accent=""):
             sub_cls = "warn" if warn else ("muted" if muted else "")
+            accent_cls = f" accent-{accent}" if accent else ""
             return (
-                f'<div class="metric-wrap">'
+                f'<div class="metric-wrap{accent_cls}">'
                 f'<div class="metric-label">{label}</div>'
                 f'<div class="metric-value">{value}</div>'
                 + (f'<div class="metric-sub {sub_cls}">{sub}</div>' if sub else "")
@@ -1309,31 +1473,31 @@ if _is_authenticated():
 
         cols = st.columns(8)
         metrics = [
-            ("Companies",    companies,  "",                                          False, True),
-            ("Sent",         total,      "",                                          False, True),
-            ("Opened",       opened,     f"{open_rate}% open rate",                  False, False),
-            ("Resume Clicks",resume,     f"{resume_ppl} unique",                     False, resume == 0),
-            ("LinkedIn Clicks",linkedin, f"{linkedin_ppl} unique",                   False, linkedin == 0),
-            ("Website Clicks",website,   f"{website_ppl} unique",                    False, website == 0),
-            ("Viewed All 3", viewed_all, f"{round(viewed_all/total*100)}%" if total else "", False, viewed_all == 0),
-            ("Follow-up",    followup,   f">{st.session_state.followup_days}d no open", followup > 0, not followup > 0),
+            ("Companies",      companies,  "",                                          False, True,  ""),
+            ("Sent",           total,      "",                                          False, True,  "blue"),
+            ("Opened",         opened,     f"{open_rate}% open rate",                  False, False, "green"),
+            ("Resume",         resume,     f"{resume_ppl} unique",                     False, resume == 0,   "purple"),
+            ("LinkedIn",       linkedin,   f"{linkedin_ppl} unique",                   False, linkedin == 0, "blue"),
+            ("Website",        website,    f"{website_ppl} unique",                    False, website == 0,  "amber"),
+            ("Viewed All 3",   viewed_all, f"{round(viewed_all/total*100)}%" if total else "", False, viewed_all == 0, "green"),
+            ("Follow-up",      followup,   f">{st.session_state.followup_days}d no open", followup > 0, not followup > 0, "red"),
         ]
-        for col, (label, val, sub, warn, muted) in zip(cols, metrics):
-            col.markdown(_card(label, val, sub, warn, muted), unsafe_allow_html=True)
+        for col, (label, val, sub, warn, muted, accent) in zip(cols, metrics):
+            col.markdown(_card(label, val, sub, warn, muted, accent), unsafe_allow_html=True)
 
         st.markdown('<hr class="divider">', unsafe_allow_html=True)
 
         # ── Charts ───────────────────────────────────────────────────────────────
         ch1, ch2, ch3 = st.columns(3)
         with ch1:
-            st.markdown('<p class="sec">Open Rate</p>', unsafe_allow_html=True)
+            st.markdown('<p class="sec">🟢 Open Rate</p>', unsafe_allow_html=True)
             st.bar_chart(
                 pd.DataFrame({"Status": ["Opened", "Not Opened"], "Count": [opened, total - opened]})
                 .set_index("Status"),
                 color=["#3ecf8e"], height=180,
             )
         with ch2:
-            st.markdown('<p class="sec">Link Clicks (total)</p>', unsafe_allow_html=True)
+            st.markdown('<p class="sec">🟣 Link Clicks</p>', unsafe_allow_html=True)
             st.bar_chart(
                 pd.DataFrame({
                     "Link":  ["Resume", "LinkedIn", "Website"],
@@ -1342,7 +1506,7 @@ if _is_authenticated():
                 color=["#6366f1"], height=180,
             )
         with ch3:
-            st.markdown('<p class="sec">Outreach by Company</p>', unsafe_allow_html=True)
+            st.markdown('<p class="sec">🟡 By Company</p>', unsafe_allow_html=True)
             if "company" in df.columns:
                 st.bar_chart(
                     df.groupby("company").size().reset_index(name="Count")
@@ -1353,17 +1517,17 @@ if _is_authenticated():
         st.markdown('<hr class="divider">', unsafe_allow_html=True)
 
         # ── Filters ──────────────────────────────────────────────────────────────
-        st.markdown('<p class="sec">Outreach Log</p>', unsafe_allow_html=True)
+        st.markdown('<div class="sec-title">📋 Outreach Log</div>', unsafe_allow_html=True)
 
         ff1, ff2, ff3 = st.columns([2, 2, 1])
         with ff1:
             company_opts   = ["All Companies"] + sorted(df.get("company", pd.Series()).dropna().unique().tolist())
-            company_filter = st.selectbox("", company_opts, label_visibility="collapsed", key="dash_co")
+            company_filter = st.selectbox("Company", company_opts, label_visibility="collapsed", key="dash_co")
         with ff2:
-            search = st.text_input("", placeholder="Search name, company, email…", label_visibility="collapsed", key="dash_search")
+            search = st.text_input("Search", placeholder="Search name, company, email…", label_visibility="collapsed", key="dash_search")
         with ff3:
             fd = st.number_input(
-                "", min_value=1, max_value=14,
+                "Follow-up days", min_value=1, max_value=14,
                 value=st.session_state.followup_days, step=1,
                 label_visibility="collapsed",
                 help="Follow-up threshold (days)",
@@ -1386,7 +1550,7 @@ if _is_authenticated():
                 if st.button(
                     f"● {label}" if is_active else label,
                     key=f"dpill_{key}",
-                    use_container_width=True,
+                    width="stretch",
                     type="primary" if is_active else "secondary",
                 ):
                     st.session_state.active_filter = key
@@ -1450,7 +1614,7 @@ if _is_authenticated():
 
         st.dataframe(
             display[show_cols].rename(columns=rename_map),
-            use_container_width=True,
+            width="stretch",
             hide_index=True,
             column_config={
                 "Email":    st.column_config.TextColumn(width="medium"),
@@ -1472,7 +1636,8 @@ if _is_authenticated():
         followup_df = df[df["needs_followup"]]
         if len(followup_df) > 0:
             st.markdown(
-                f'<p class="sec">Follow-up needed &nbsp;·&nbsp; {len(followup_df)} HRs</p>',
+                f'<div class="sec-title" style="color:#f87171;">'
+                f'⚠️ Follow-up needed &nbsp;·&nbsp; {len(followup_df)} HRs</div>',
                 unsafe_allow_html=True,
             )
             for _, row in followup_df.iterrows():
