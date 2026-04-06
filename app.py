@@ -402,7 +402,7 @@ if not _google_pkgs_ok():
     st.code("pip install google-auth google-auth-oauthlib google-api-python-client", language="bash")
     st.stop()
 
-elif not os.path.exists(_TOKEN_FILE):
+elif not os.path.exists(_TOKEN_FILE) and not st.secrets.get("gmail_token_json"):
     # Gmail not yet authorised — show a dedicated connect screen
     st.markdown(
         '<h2 style="color:#e2e4ed;font-weight:600;margin-bottom:0;">🚀 Cold Email Hub</h2>'
@@ -432,7 +432,9 @@ elif not os.path.exists(_TOKEN_FILE):
                 except FileNotFoundError:
                     st.error(
                         "gmail_credentials.json not found. "
-                        "Download it from Google Cloud Console and place it in the app folder."
+                        "For local use: download it from Google Cloud Console and place it in the app folder. "
+                        "For Streamlit Cloud: add your Gmail token to app secrets as `gmail_token_json` "
+                        "(copy the contents of .gmail_token.json after authenticating locally)."
                     )
                 except Exception as e:
                     st.error(f"Auth failed: {e}")

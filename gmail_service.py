@@ -26,20 +26,53 @@ CREDS_FILE  = _DIR / "gmail_credentials.json"
 # ─── Internal ─────────────────────────────────────────────────────────────────
 
 def _load_creds():
-    """Load credentials from token file, refreshing if expired."""
-    # Check file existence BEFORE importing google packages (packages may not be installed yet)
-    if not TOKEN_FILE.exists():
-        return None
+    """
+    Load credentials from token file (local dev) or st.secrets (Streamlit Cloud).
+    Refreshes the token if expired.
+    """
+    import json
     try:
         from google.oauth2.credentials import Credentials
         from google.auth.transport.requests import Request as GReq
-        creds = Credentials.from_authorized_user_file(str(TOKEN_FILE), SCOPES)
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(GReq())
-            TOKEN_FILE.write_text(creds.to_json())
-        return creds
-    except Exception:
+    except ImportError:
         return None
+
+    creds = None
+
+    # 1. Try local token file first
+    if TOKEN_FILE.exists():
+        try:
+            creds = Credentials.from_authorized_user_file(str(TOKEN_FILE), SCOPES)
+        except Exception:
+            creds = None
+
+    # 2. Fall back to Streamlit secrets (Streamlit Cloud deployment)
+    if creds is None:
+        try:
+            import streamlit as st
+            token_val = st.secrets.get("gmail_token_json")
+            if token_val:
+                info = json.loads(token_val) if isinstance(token_val, str) else dict(token_val)
+                creds = Credentials.from_authorized_user_info(info, SCOPES)
+        except Exception:
+            pass
+
+    if creds is None:
+        return None
+
+    # Refresh if expired
+    if creds.expired and creds.refresh_token:
+        try:
+            creds.refresh(GReq())
+            # Persist refreshed token locally if possible (silently skip on cloud)
+            try:
+                TOKEN_FILE.write_text(creds.to_json())
+            except Exception:
+                pass
+        except Exception:
+            return None
+
+    return creds if creds.valid else None
 
 
 # ─── Public API ───────────────────────────────────────────────────────────────

@@ -1,6 +1,6 @@
 # Cold Email Automation — Internship Hunt Tracker
 
-An end-to-end system that sends personalized, tracked cold emails to recruiters and shows real-time engagement data on a dashboard — built to take the guesswork out of internship hunting.
+An end-to-end system that finds recruiter contacts, sends personalized tracked cold emails directly via the Gmail API, and shows real-time engagement data on a dashboard — built to take the guesswork out of internship hunting.
 
 ---
 
@@ -13,22 +13,22 @@ Sending cold emails to recruiters is blind by default. You don't know if anyone 
 ## How It Works
 
 ```
-Google Sheets (HR queue)
+Apollo API (contact discovery)
         ↓
-    n8n Workflow
+  Streamlit App (app.py)
         ↓
   ┌─────────────────────────────────────┐
-  │  1. Read contacts from queue sheet  │
+  │  1. Search & import HR contacts     │
   │  2. Generate unique tracking ID     │
   │  3. Log contact to Supabase         │
-  │  4. Fetch email template (G Docs)   │
+  │  4. Build personalized HTML email   │
   │  5. Inject tracking links + pixel   │
-  │  6. Send via Gmail                  │
+  │  6. Send via Gmail API directly     │
   └─────────────────────────────────────┘
         ↓
    Supabase DB  ←──  Tracking pixels & link redirects (Edge Functions)
         ↓
-  Streamlit Dashboard
+  Streamlit Dashboard (same app)
 ```
 
 Every link in the email (resume, LinkedIn, website) routes through a **Supabase Edge Function** that logs the click and redirects. A 1×1 invisible pixel tracks email opens the same way.
@@ -39,41 +39,28 @@ Every link in the email (resume, LinkedIn, website) routes through a **Supabase 
 
 | Layer | Tool |
 |---|---|
-| Contact queue | Google Sheets |
-| Automation | n8n |
-| Email template | Google Docs |
-| Email sending | Gmail (via n8n) |
+| Contact discovery | Apollo API |
+| App & dashboard | Streamlit (Python) |
+| Email sending | Gmail API (OAuth 2.0, direct) |
 | Click & open tracking | Supabase Edge Functions |
 | Database | Supabase (PostgreSQL) |
-| Dashboard | Streamlit (Python) |
 
 ---
 
-## Dashboard
+## App Tabs
 
-Real-time view of every HR you've contacted.
+The entire workflow lives in a single Streamlit app (`app.py`):
+
+- **Find Contacts** — search Apollo by role/company/location, preview and import HRs
+- **Send Emails** — compose personalized emails with tracking links, send via Gmail API
+- **Dashboard** — real-time view of opens, clicks, and follow-up flags
+- **Settings** — connect Gmail via OAuth, configure tracking URLs and email templates
 
 **Metrics:** Companies reached · Emails sent · Email opens · Resume views · Website clicks · LinkedIn clicks · Viewed all 3 · Follow-up needed
 
 **Filters:** By company · By status (Opened / Not Opened / Resume / LinkedIn / Website / Viewed All 3 / Follow-up)
 
 **Follow-up list:** Auto-flags HRs who haven't opened your email past a set threshold (default 3 days).
-
----
-
-## n8n Workflow
-
-The workflow lives in [`n8n/workflow.json`](n8n/workflow.json). Import it into your n8n instance to get started.
-
-**Nodes:**
-1. **Manual Trigger** — run on demand *(Apollo API automation coming soon)*
-2. **Get rows from Google Sheets** — reads the HR contact queue
-3. **Generate Tracking ID** — unique ID per contact (`timestamp_random`)
-4. **Execute SQL** — logs contact to Supabase `email_tracking` table
-5. **Get Google Doc** — fetches the email template
-6. **Merge** — combines template + contact data
-7. **Code (JavaScript)** — replaces `<name>`, `<company_name>`, `<resume_url>`, `<linkedin_url>`, `<website_url>` placeholders, appends tracking pixel
-8. **Send via Gmail** — fires the personalized email
 
 ---
 
@@ -101,25 +88,32 @@ Edge Functions update the relevant column when a link is clicked or the pixel fi
 ## Setup
 
 ### 1. Supabase
-- Create a project and run the schema above
-- Deploy four Edge Functions: `email-open`, `resume-open`, `linkedin-open`, `website-open`
-- Each function updates the matching row and (for links) redirects to the real URL
+- Create a project and run `supabase_schema.sql`
+- Deploy the `track` Edge Function from `supabase/functions/track/`
+- The function handles all tracking events and redirects
 
-### 2. Google Sheets
-- Create a sheet with columns: `name`, `company`, `email`
-- Add your HR contacts to the queue tab
+### 2. Gmail API
+- Go to [console.cloud.google.com](https://console.cloud.google.com) → New project
+- Enable the **Gmail API**
+- Create **OAuth 2.0 Credentials** → Desktop App → download JSON
+- Save it as `gmail_credentials.json` in the project root
+- In the app, go to **Settings → Connect Gmail** to complete OAuth
 
-### 3. Google Docs
-- Create your email template using these placeholders:
-  `<name>`, `<company_name>`, `<resume_url>`, `<linkedin_url>`, `<website_url>`
+### 3. Apollo API
+- Get an API key from [apollo.io](https://apollo.io)
+- Add it to your `.env` file
 
-### 4. n8n
-- Import `n8n/workflow.json`
-- Connect your Google Sheets, Google Docs, Gmail, and Supabase (Postgres) credentials
+### 4. Install & Run
 
-### 5. Dashboard
 ```bash
-pip install streamlit pandas requests
+pip install -r requirements.txt
+```
+
+Create `.env`:
+```env
+APOLLO_API_KEY=your_apollo_key
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_KEY=your-publishable-key
 ```
 
 Create `.streamlit/secrets.toml`:
@@ -130,20 +124,21 @@ supabase_key = "your-publishable-key"
 
 Run:
 ```bash
-streamlit run dashboard.py
+streamlit run app.py
 ```
 
 ---
 
 ## Roadmap
 
-- [x] Manual trigger via n8n
+- [x] Apollo API integration for contact discovery
+- [x] Gmail API integration (direct, no middleware)
 - [x] Tracking pixel for email opens
 - [x] Click tracking for resume, LinkedIn, website
 - [x] Real-time Streamlit dashboard
-- [ ] Apollo API integration for automated contact discovery
-- [ ] Auto-trigger workflow from Apollo lead list
-- [ ] Follow-up email automation
+- [x] Follow-up flagging
+- [ ] Automated follow-up email sequences
+- [ ] Bulk send with rate limiting
 
 ---
 
@@ -151,10 +146,13 @@ streamlit run dashboard.py
 
 ```
 cold-emails-automation/
-├── dashboard.py          # Streamlit tracking dashboard
+├── app.py                # Unified Streamlit app (find · send · track)
+├── gmail_service.py      # Gmail OAuth 2.0 + send helpers
 ├── requirements.txt      # Python dependencies
-├── n8n/
-│   └── workflow.json     # n8n automation workflow (importable)
+├── supabase_schema.sql   # DB schema
+├── supabase_migration.sql
+├── supabase/
+│   └── functions/track/  # Supabase Edge Function for tracking
 └── .streamlit/
     └── secrets.toml      # local only — not committed
 ```
