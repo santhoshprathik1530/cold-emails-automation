@@ -1,14 +1,25 @@
 # Secrets — never commit these
+.env
 .streamlit/secrets.toml
+gmail_credentials.json
+.gmail_token.json
+.app_settings.json
 
 # Python
 __pycache__/
 *.py[cod]
 *.pyo
-.env
 venv/
 .venv/
 
 # OS
 .DS_Store
 Thumbs.db
+
+# Supabase
+supabase/.temp/
+
+# Tools
+.rocketride/
+.vscode/
+.claude/
