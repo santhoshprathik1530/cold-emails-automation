@@ -365,6 +365,14 @@ def gmail_connect():
     return authenticate()
 
 
+def gmail_clear_token():
+    try:
+        from gmail_service import clear_token
+        clear_token()
+    except Exception:
+        pass
+
+
 # DEFAULTS — subject + HTML template (kept simple and ASCII-safe)
 DEFAULT_SUBJECT = "Summer 2026 Internship - Data Analytics / DS / AI | Santhosh Prathik Kasam"
 
@@ -456,6 +464,7 @@ _defaults = {
     "search_results":  [],
     "enriched_results": [],
     "select_all":      False,
+    "send_select_all": False,
     "send_contacts":   [],   # contacts queued for the Send tab
     "active_filter":   "All",
     "followup_days":   3,
@@ -977,6 +986,27 @@ if _is_authenticated():
             msg += " Please check your Gmail token in Streamlit secrets."
         st.warning(msg, icon="⚠️")
 
+        if detail and "invalid_grant" in detail:
+            st.info(
+                "Your saved Gmail token has been revoked or expired. Start a fresh Google sign-in to reconnect this app.",
+                icon="🔄",
+            )
+            if st.button("Reconnect Gmail", type="primary", key="send_reconnect_gmail_btn"):
+                with st.spinner("Starting Gmail reconnect flow..."):
+                    try:
+                        gmail_clear_token()
+                        gmail_connect()
+                        st.success("Gmail reconnected.")
+                        time.sleep(1)
+                        st.rerun()
+                    except FileNotFoundError:
+                        st.error(
+                            "gmail_credentials.json not found. For local use, place it in the app folder. "
+                            "For Streamlit Cloud, reconnect locally and then update `gmail_token_json` in secrets."
+                        )
+                    except Exception as e:
+                        st.error(f"Reconnect failed: {e}")
+
     # ── Reload config on each render ─────────────────────────────────────────
     send_sender   = _cfg("SENDER_NAME", "")
     send_resume   = _cfg("RESUME_URL", "")
@@ -1048,6 +1078,8 @@ if _is_authenticated():
         )
     with src_col2:
         if st.button("↻ Refresh contacts", key="refresh_contacts"):
+            st.session_state.send_select_all = False
+            st.session_state.pop("send_tbl", None)
             st.rerun()
 
     # Load contacts based on source
@@ -1082,7 +1114,7 @@ if _is_authenticated():
 
     if raw_contacts:
         send_df = pd.DataFrame([{
-            "✓":      False,
+            "✓":      st.session_state.send_select_all,
             "Name":   (c.get("name") or c.get("first_name") or "").strip().title() or "—",
             "Email":  c.get("email") or "—",
             "Company": c.get("company") or "—",
@@ -1092,10 +1124,14 @@ if _is_authenticated():
         sa1, sa2, _ = st.columns([1, 1, 6])
         with sa1:
             if st.button("Select All", key="send_selall"):
-                send_df["✓"] = True
+                st.session_state.send_select_all = True
+                st.session_state.pop("send_tbl", None)
+                st.rerun()
         with sa2:
             if st.button("Clear", key="send_clear"):
-                send_df["✓"] = False
+                st.session_state.send_select_all = False
+                st.session_state.pop("send_tbl", None)
+                st.rerun()
 
         edited_send = st.data_editor(
             send_df,
@@ -1113,8 +1149,19 @@ if _is_authenticated():
             key="send_tbl",
         )
 
-        selected_indices = [i for i, row in edited_send.iterrows() if row["✓"]]
-        selected_contacts = [raw_contacts[i] for i in selected_indices]
+        sel_state = st.session_state.get("send_tbl", {})
+        edited_rows = sel_state.get("edited_rows", {})
+
+        if st.session_state.send_select_all:
+            unchecked = {int(i) for i, v in edited_rows.items() if v.get("✓") is False}
+            selected_contacts = [
+                c for i, c in enumerate(raw_contacts)
+                if i not in unchecked
+            ]
+        else:
+            checked = [int(i) for i, v in edited_rows.items() if v.get("✓")]
+            selected_contacts = [raw_contacts[i] for i in checked]
+
         n_sel = len(selected_contacts)
 
         st.markdown(

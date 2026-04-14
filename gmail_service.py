@@ -125,6 +125,16 @@ def authenticate(creds_path=None) -> object:
     return creds
 
 
+def clear_token() -> None:
+    """Remove the local Gmail token so a fresh OAuth flow can start cleanly."""
+    global _LAST_AUTH_ERROR
+    _LAST_AUTH_ERROR = None
+    try:
+        TOKEN_FILE.unlink(missing_ok=True)
+    except Exception:
+        pass
+
+
 def get_sender_email() -> str | None:
     """Return the email address of the authenticated Gmail account."""
     try:
