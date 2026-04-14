@@ -1,12 +1,16 @@
 """
 Gmail OAuth 2.0 authentication and email sending via Google API.
 
-Setup:
+Local setup:
 1. Go to console.cloud.google.com → New project
 2. Enable Gmail API
 3. Credentials → Create → OAuth 2.0 Client ID → Desktop App
 4. Download JSON → save as gmail_credentials.json in this folder
-5. In the app, go to Settings → Connect Gmail
+
+Cloud setup:
+1. Create a Google OAuth 2.0 Client ID of type Web application
+2. Add your deployed Streamlit URL as an authorized redirect URI
+3. Put that JSON into Streamlit secrets as gmail_oauth_client_json
 """
 import base64
 import json
@@ -92,6 +96,41 @@ def _load_creds():
     return creds
 
 
+def _secret_value(*keys):
+    try:
+        import streamlit as st
+    except Exception:
+        return None
+
+    for key in keys:
+        val = st.secrets.get(key)
+        if val:
+            return val
+    return None
+
+
+def _load_oauth_client_config():
+    # Local file for desktop flow
+    if CREDS_FILE.exists():
+        try:
+            return json.loads(CREDS_FILE.read_text())
+        except Exception:
+            return None
+
+    secret_val = _secret_value(
+        "gmail_oauth_client_json",
+        "GMAIL_OAUTH_CLIENT_JSON",
+        "gmail_credentials_json",
+        "GMAIL_CREDENTIALS_JSON",
+    )
+    if not secret_val:
+        return None
+
+    if isinstance(secret_val, str):
+        return json.loads(secret_val)
+    return dict(secret_val)
+
+
 # ─── Public API ───────────────────────────────────────────────────────────────
 
 def is_authenticated() -> bool:
@@ -103,6 +142,57 @@ def is_authenticated() -> bool:
 def get_auth_error() -> str | None:
     """Return the most recent Gmail auth/load failure reason."""
     return _LAST_AUTH_ERROR
+
+
+def has_oauth_client_config() -> bool:
+    """Return True when Gmail OAuth client config is available."""
+    return _load_oauth_client_config() is not None
+
+
+def begin_web_auth(redirect_uri: str) -> tuple[str, str]:
+    """Start a browser-based OAuth flow and return (auth_url, state)."""
+    from google_auth_oauthlib.flow import Flow
+
+    client_config = _load_oauth_client_config()
+    if not client_config:
+        raise FileNotFoundError(
+            "No Gmail OAuth client config found. Add `gmail_oauth_client_json` to Streamlit secrets."
+        )
+    if "web" not in client_config:
+        raise RuntimeError(
+            "In-app Gmail connect requires a Google Web application OAuth client."
+        )
+
+    flow = Flow.from_client_config(client_config, SCOPES)
+    flow.redirect_uri = redirect_uri
+    auth_url, state = flow.authorization_url(
+        access_type="offline",
+        include_granted_scopes="true",
+        prompt="consent",
+    )
+    return auth_url, state
+
+
+def finish_web_auth(code: str, state: str, redirect_uri: str) -> object:
+    """Exchange the OAuth callback code for Gmail credentials."""
+    from google_auth_oauthlib.flow import Flow
+
+    client_config = _load_oauth_client_config()
+    if not client_config:
+        raise FileNotFoundError(
+            "No Gmail OAuth client config found. Add `gmail_oauth_client_json` to Streamlit secrets."
+        )
+    if "web" not in client_config:
+        raise RuntimeError(
+            "In-app Gmail connect requires a Google Web application OAuth client."
+        )
+
+    flow = Flow.from_client_config(client_config, SCOPES, state=state)
+    flow.redirect_uri = redirect_uri
+    flow.fetch_token(code=code)
+    creds = flow.credentials
+    TOKEN_FILE.write_text(creds.to_json())
+    return creds
 
 
 def authenticate(creds_path=None) -> object:

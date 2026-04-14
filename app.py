@@ -272,6 +272,8 @@ LINKEDIN_URL = _cfg("LINKEDIN_URL", "")
 WEBSITE_URL  = _cfg("WEBSITE_URL", "")
 APP_USERNAME = _cfg("APP_USERNAME", "")
 APP_PASSWORD = _cfg("APP_PASSWORD", "")
+APP_BASE_URL = _cfg("APP_BASE_URL", "")
+GMAIL_REDIRECT_URI = _cfg("GMAIL_REDIRECT_URI", APP_BASE_URL)
 
 APOLLO_H = {
     "Content-Type": "application/json",
@@ -365,12 +367,35 @@ def gmail_connect():
     return authenticate()
 
 
+def gmail_has_oauth_config() -> bool:
+    try:
+        from gmail_service import has_oauth_client_config
+        return has_oauth_client_config()
+    except Exception:
+        return False
+
+
+def gmail_begin_web_auth(redirect_uri: str) -> tuple[str, str]:
+    from gmail_service import begin_web_auth
+    return begin_web_auth(redirect_uri)
+
+
+def gmail_finish_web_auth(code: str, state: str, redirect_uri: str):
+    from gmail_service import finish_web_auth
+    return finish_web_auth(code, state, redirect_uri)
+
+
 def gmail_clear_token():
     try:
         from gmail_service import clear_token
         clear_token()
     except Exception:
         pass
+
+
+def _clear_query_params():
+    for k in list(st.query_params.keys()):
+        del st.query_params[k]
 
 
 # DEFAULTS — subject + HTML template (kept simple and ASCII-safe)
@@ -515,6 +540,38 @@ def _google_pkgs_ok() -> bool:
         return False
 
 
+qp_code = st.query_params.get("code")
+qp_state = st.query_params.get("state")
+qp_error = st.query_params.get("error")
+
+if qp_error:
+    st.error(f"Gmail authorization failed: {qp_error}")
+    st.session_state.pop("gmail_oauth_state", None)
+    _clear_query_params()
+
+if qp_code:
+    expected_state = st.session_state.get("gmail_oauth_state")
+    if not GMAIL_REDIRECT_URI:
+        st.error("Gmail OAuth callback received, but `APP_BASE_URL` or `GMAIL_REDIRECT_URI` is not configured.")
+        _clear_query_params()
+    elif not expected_state or qp_state != expected_state:
+        st.error("Gmail OAuth state mismatch. Please try connecting again.")
+        st.session_state.pop("gmail_oauth_state", None)
+        _clear_query_params()
+    else:
+        try:
+            gmail_finish_web_auth(qp_code, qp_state, GMAIL_REDIRECT_URI)
+            st.session_state.pop("gmail_oauth_state", None)
+            _clear_query_params()
+            st.success("✅ Gmail connected!")
+            time.sleep(1)
+            st.rerun()
+        except Exception as e:
+            st.error(f"Gmail OAuth callback failed: {e}")
+            st.session_state.pop("gmail_oauth_state", None)
+            _clear_query_params()
+
+
 if not _google_pkgs_ok():
     st.markdown(
         '<div style="padding:0.3rem 0;">'
@@ -527,7 +584,7 @@ if not _google_pkgs_ok():
     st.code("pip install google-auth google-auth-oauthlib google-api-python-client", language="bash")
     st.stop()
 
-elif not os.path.exists(_TOKEN_FILE) and not st.secrets.get("gmail_token_json"):
+elif not os.path.exists(_TOKEN_FILE) and not st.secrets.get("gmail_token_json") and not st.secrets.get("GMAIL_TOKEN_JSON"):
     # Gmail not yet authorised — show a dedicated connect screen
     st.markdown(
         '<div style="padding:0.3rem 0;">'
@@ -543,27 +600,45 @@ elif not os.path.exists(_TOKEN_FILE) and not st.secrets.get("gmail_token_json"):
             '<div class="glass-card">'
             '<p style="color:#c8cce0;font-size:1rem;font-weight:600;margin-bottom:0.4rem;">Connect Gmail</p>'
             '<p style="color:#3a3f55;font-size:0.82rem;margin-bottom:1.5rem;">'
-            'The app will open a browser tab — sign in and allow access. '
-            'Your token is saved locally and never leaves this machine.</p>'
+            'Sign in with Google to allow Gmail access for this app. '
+            'Local runs use a desktop OAuth flow. Cloud deployments use a web OAuth redirect back to this app.</p>'
             '</div>',
             unsafe_allow_html=True,
         )
-        if st.button("🔗 Connect Gmail", type="primary", width="stretch"):
+        if os.path.exists(_CREDS_FILE):
+            if st.button("🔗 Connect Gmail", type="primary", width="stretch"):
+                with st.spinner("Opening browser for Gmail authorization…"):
+                    try:
+                        gmail_connect()
+                        st.success("✅ Gmail connected!")
+                        time.sleep(1)
+                        st.rerun()
+                    except FileNotFoundError:
+                        st.error(
+                            "gmail_credentials.json not found. "
+                            "For local use: download it from Google Cloud Console and place it in the app folder. "
+                            "For Streamlit Cloud, add `gmail_oauth_client_json` and `APP_BASE_URL` to app secrets."
+                        )
+                    except Exception as e:
+                        st.error(f"Auth failed: {e}")
+        elif gmail_has_oauth_config() and GMAIL_REDIRECT_URI:
             with st.spinner("Opening browser for Gmail authorization…"):
                 try:
-                    gmail_connect()
-                    st.success("✅ Gmail connected!")
-                    time.sleep(1)
-                    st.rerun()
+                    auth_url, auth_state = gmail_begin_web_auth(GMAIL_REDIRECT_URI)
+                    st.session_state.gmail_oauth_state = auth_state
+                    st.link_button("🔗 Connect Gmail", auth_url, type="primary", use_container_width=True)
                 except FileNotFoundError:
                     st.error(
-                        "gmail_credentials.json not found. "
-                        "For local use: download it from Google Cloud Console and place it in the app folder. "
-                        "For Streamlit Cloud: add your Gmail token to app secrets as `gmail_token_json` "
-                        "(copy the contents of .gmail_token.json after authenticating locally)."
+                        "Gmail OAuth client config not found. "
+                        "For Streamlit Cloud, add `gmail_oauth_client_json` and `APP_BASE_URL` to app secrets."
                     )
                 except Exception as e:
                     st.error(f"Auth failed: {e}")
+        else:
+            st.error(
+                "Gmail OAuth is not configured for this deployment. "
+                "For Streamlit Cloud, add `APP_BASE_URL` and `gmail_oauth_client_json` to secrets."
+            )
     st.stop()
 
 
@@ -991,21 +1066,34 @@ if _is_authenticated():
                 "Your saved Gmail token has been revoked or expired. Start a fresh Google sign-in to reconnect this app.",
                 icon="🔄",
             )
-            if st.button("Reconnect Gmail", type="primary", key="send_reconnect_gmail_btn"):
-                with st.spinner("Starting Gmail reconnect flow..."):
-                    try:
-                        gmail_clear_token()
-                        gmail_connect()
-                        st.success("Gmail reconnected.")
-                        time.sleep(1)
-                        st.rerun()
-                    except FileNotFoundError:
-                        st.error(
-                            "gmail_credentials.json not found. For local use, place it in the app folder. "
-                            "For Streamlit Cloud, reconnect locally and then update `gmail_token_json` in secrets."
-                        )
-                    except Exception as e:
-                        st.error(f"Reconnect failed: {e}")
+            if os.path.exists(_CREDS_FILE):
+                if st.button("Reconnect Gmail", type="primary", key="send_reconnect_gmail_btn"):
+                    with st.spinner("Starting Gmail reconnect flow..."):
+                        try:
+                            gmail_clear_token()
+                            gmail_connect()
+                            st.success("Gmail reconnected.")
+                            time.sleep(1)
+                            st.rerun()
+                        except FileNotFoundError:
+                            st.error(
+                                "gmail_credentials.json not found. For local use, place it in the app folder. "
+                                "For Streamlit Cloud, reconnect locally and then update `gmail_token_json` in secrets."
+                            )
+                        except Exception as e:
+                            st.error(f"Reconnect failed: {e}")
+            elif gmail_has_oauth_config() and GMAIL_REDIRECT_URI:
+                try:
+                    auth_url, auth_state = gmail_begin_web_auth(GMAIL_REDIRECT_URI)
+                    st.session_state.gmail_oauth_state = auth_state
+                    st.link_button("Reconnect Gmail", auth_url, type="primary", use_container_width=True)
+                except Exception as e:
+                    st.error(f"Reconnect setup failed: {e}")
+            else:
+                st.caption(
+                    "In-app reconnect needs Google web OAuth configured for this deployment. "
+                    "Add `APP_BASE_URL` and `gmail_oauth_client_json` to Streamlit secrets."
+                )
 
     # ── Reload config on each render ─────────────────────────────────────────
     send_sender   = _cfg("SENDER_NAME", "")
