@@ -9,6 +9,7 @@ Setup:
 5. In the app, go to Settings → Connect Gmail
 """
 import base64
+import json
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from pathlib import Path
@@ -21,6 +22,7 @@ SCOPES = [
 _DIR        = Path(__file__).parent
 TOKEN_FILE  = _DIR / ".gmail_token.json"
 CREDS_FILE  = _DIR / "gmail_credentials.json"
+_LAST_AUTH_ERROR = None
 
 
 # ─── Internal ─────────────────────────────────────────────────────────────────
@@ -30,11 +32,13 @@ def _load_creds():
     Load credentials from token file (local dev) or st.secrets (Streamlit Cloud).
     Refreshes the token if expired.
     """
-    import json
+    global _LAST_AUTH_ERROR
+    _LAST_AUTH_ERROR = None
     try:
         from google.oauth2.credentials import Credentials
         from google.auth.transport.requests import Request as GReq
     except ImportError:
+        _LAST_AUTH_ERROR = "Google API packages are not installed."
         return None
 
     creds = None
@@ -43,19 +47,27 @@ def _load_creds():
     if TOKEN_FILE.exists():
         try:
             creds = Credentials.from_authorized_user_file(str(TOKEN_FILE), SCOPES)
-        except Exception:
+        except Exception as e:
+            _LAST_AUTH_ERROR = f"Local Gmail token could not be loaded: {e}"
             creds = None
 
     # 2. Fall back to Streamlit secrets (Streamlit Cloud deployment)
     if creds is None:
         try:
             import streamlit as st
-            token_val = st.secrets.get("gmail_token_json")
+            token_val = (
+                st.secrets.get("gmail_token_json")
+                or st.secrets.get("GMAIL_TOKEN_JSON")
+            )
             if token_val:
                 info = json.loads(token_val) if isinstance(token_val, str) else dict(token_val)
                 creds = Credentials.from_authorized_user_info(info, SCOPES)
-        except Exception:
-            pass
+            else:
+                _LAST_AUTH_ERROR = (
+                    "No Gmail token found. Add `gmail_token_json` to Streamlit secrets."
+                )
+        except Exception as e:
+            _LAST_AUTH_ERROR = f"Streamlit Gmail token could not be loaded: {e}"
 
     if creds is None:
         return None
@@ -69,10 +81,15 @@ def _load_creds():
                 TOKEN_FILE.write_text(creds.to_json())
             except Exception:
                 pass
-        except Exception:
+        except Exception as e:
+            _LAST_AUTH_ERROR = f"Gmail token refresh failed: {e}"
             return None
 
-    return creds if creds.valid else None
+    if not creds.valid:
+        _LAST_AUTH_ERROR = "Gmail credentials are present but invalid."
+        return None
+
+    return creds
 
 
 # ─── Public API ───────────────────────────────────────────────────────────────
@@ -81,6 +98,11 @@ def is_authenticated() -> bool:
     """Returns True if a valid Gmail token exists."""
     c = _load_creds()
     return c is not None and c.valid
+
+
+def get_auth_error() -> str | None:
+    """Return the most recent Gmail auth/load failure reason."""
+    return _LAST_AUTH_ERROR
 
 
 def authenticate(creds_path=None) -> object:

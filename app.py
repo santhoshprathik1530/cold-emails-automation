@@ -338,6 +338,14 @@ def gmail_ok() -> bool:
         return False
 
 
+def gmail_auth_error() -> str | None:
+    try:
+        from gmail_service import get_auth_error
+        return get_auth_error()
+    except Exception:
+        return None
+
+
 def gmail_sender_addr() -> str | None:
     try:
         from gmail_service import get_sender_email
@@ -961,10 +969,13 @@ if _is_authenticated():
   with tab_send:
 
     if not gmail_ok():
-        st.warning(
-            "Gmail is not connected. Please check your Gmail token in Streamlit secrets.",
-            icon="⚠️",
-        )
+        detail = gmail_auth_error()
+        msg = "Gmail is not connected."
+        if detail:
+            msg += f" {detail}"
+        else:
+            msg += " Please check your Gmail token in Streamlit secrets."
+        st.warning(msg, icon="⚠️")
 
     # ── Reload config on each render ─────────────────────────────────────────
     send_sender   = _cfg("SENDER_NAME", "")
