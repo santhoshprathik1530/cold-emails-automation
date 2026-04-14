@@ -17,6 +17,7 @@ import json
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from pathlib import Path
+from secrets import token_urlsafe
 
 SCOPES = [
     "https://www.googleapis.com/auth/gmail.send",
@@ -110,6 +111,17 @@ def _secret_value(*keys):
 
 
 def _load_oauth_client_config():
+    secret_val = _secret_value(
+        "gmail_oauth_client_json",
+        "GMAIL_OAUTH_CLIENT_JSON",
+        "gmail_credentials_json",
+        "GMAIL_CREDENTIALS_JSON",
+    )
+    if secret_val:
+        if isinstance(secret_val, str):
+            return json.loads(secret_val)
+        return dict(secret_val)
+
     # Local file for desktop flow
     if CREDS_FILE.exists():
         try:
@@ -117,18 +129,20 @@ def _load_oauth_client_config():
         except Exception:
             return None
 
-    secret_val = _secret_value(
-        "gmail_oauth_client_json",
-        "GMAIL_OAUTH_CLIENT_JSON",
-        "gmail_credentials_json",
-        "GMAIL_CREDENTIALS_JSON",
-    )
-    if not secret_val:
-        return None
+    return None
 
-    if isinstance(secret_val, str):
-        return json.loads(secret_val)
-    return dict(secret_val)
+
+def _encode_state_payload(code_verifier: str) -> str:
+    payload = {"code_verifier": code_verifier}
+    raw = json.dumps(payload, separators=(",", ":")).encode()
+    return base64.urlsafe_b64encode(raw).decode().rstrip("=")
+
+
+def _decode_state_payload(state: str) -> str:
+    padding = "=" * (-len(state) % 4)
+    raw = base64.urlsafe_b64decode(state + padding).decode()
+    payload = json.loads(raw)
+    return payload["code_verifier"]
 
 
 # ─── Public API ───────────────────────────────────────────────────────────────
@@ -163,12 +177,20 @@ def begin_web_auth(redirect_uri: str) -> tuple[str, str]:
             "In-app Gmail connect requires a Google Web application OAuth client."
         )
 
-    flow = Flow.from_client_config(client_config, SCOPES)
+    code_verifier = token_urlsafe(96)[:128]
+    flow = Flow.from_client_config(
+        client_config,
+        SCOPES,
+        code_verifier=code_verifier,
+        autogenerate_code_verifier=False,
+    )
     flow.redirect_uri = redirect_uri
-    auth_url, state = flow.authorization_url(
+    state = _encode_state_payload(code_verifier)
+    auth_url, _ = flow.authorization_url(
         access_type="offline",
         include_granted_scopes="true",
         prompt="consent",
+        state=state,
     )
     return auth_url, state
 
@@ -187,7 +209,14 @@ def finish_web_auth(code: str, state: str, redirect_uri: str) -> object:
             "In-app Gmail connect requires a Google Web application OAuth client."
         )
 
-    flow = Flow.from_client_config(client_config, SCOPES, state=state)
+    code_verifier = _decode_state_payload(state)
+    flow = Flow.from_client_config(
+        client_config,
+        SCOPES,
+        state=state,
+        code_verifier=code_verifier,
+        autogenerate_code_verifier=False,
+    )
     flow.redirect_uri = redirect_uri
     flow.fetch_token(code=code)
     creds = flow.credentials
