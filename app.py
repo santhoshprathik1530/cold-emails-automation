@@ -546,29 +546,24 @@ qp_error = st.query_params.get("error")
 
 if qp_error:
     st.error(f"Gmail authorization failed: {qp_error}")
-    st.session_state.pop("gmail_oauth_state", None)
     _clear_query_params()
 
 if qp_code:
-    expected_state = st.session_state.get("gmail_oauth_state")
     if not GMAIL_REDIRECT_URI:
         st.error("Gmail OAuth callback received, but `APP_BASE_URL` or `GMAIL_REDIRECT_URI` is not configured.")
         _clear_query_params()
-    elif not expected_state or qp_state != expected_state:
-        st.error("Gmail OAuth state mismatch. Please try connecting again.")
-        st.session_state.pop("gmail_oauth_state", None)
+    elif not qp_state:
+        st.error("Gmail OAuth callback is missing the state parameter. Please try connecting again.")
         _clear_query_params()
     else:
         try:
             gmail_finish_web_auth(qp_code, qp_state, GMAIL_REDIRECT_URI)
-            st.session_state.pop("gmail_oauth_state", None)
             _clear_query_params()
             st.success("✅ Gmail connected!")
             time.sleep(1)
             st.rerun()
         except Exception as e:
             st.error(f"Gmail OAuth callback failed: {e}")
-            st.session_state.pop("gmail_oauth_state", None)
             _clear_query_params()
 
 
@@ -622,18 +617,16 @@ elif not os.path.exists(_TOKEN_FILE) and not st.secrets.get("gmail_token_json") 
                     except Exception as e:
                         st.error(f"Auth failed: {e}")
         elif gmail_has_oauth_config() and GMAIL_REDIRECT_URI:
-            with st.spinner("Opening browser for Gmail authorization…"):
-                try:
-                    auth_url, auth_state = gmail_begin_web_auth(GMAIL_REDIRECT_URI)
-                    st.session_state.gmail_oauth_state = auth_state
-                    st.link_button("🔗 Connect Gmail", auth_url, type="primary", use_container_width=True)
-                except FileNotFoundError:
-                    st.error(
-                        "Gmail OAuth client config not found. "
-                        "For Streamlit Cloud, add `gmail_oauth_client_json` and `APP_BASE_URL` to app secrets."
-                    )
-                except Exception as e:
-                    st.error(f"Auth failed: {e}")
+            try:
+                auth_url, _ = gmail_begin_web_auth(GMAIL_REDIRECT_URI)
+                st.link_button("🔗 Connect Gmail", auth_url, type="primary", use_container_width=True)
+            except FileNotFoundError:
+                st.error(
+                    "Gmail OAuth client config not found. "
+                    "For Streamlit Cloud, add `gmail_oauth_client_json` and `APP_BASE_URL` to app secrets."
+                )
+            except Exception as e:
+                st.error(f"Auth failed: {e}")
         else:
             st.error(
                 "Gmail OAuth is not configured for this deployment. "
@@ -1084,8 +1077,7 @@ if _is_authenticated():
                             st.error(f"Reconnect failed: {e}")
             elif gmail_has_oauth_config() and GMAIL_REDIRECT_URI:
                 try:
-                    auth_url, auth_state = gmail_begin_web_auth(GMAIL_REDIRECT_URI)
-                    st.session_state.gmail_oauth_state = auth_state
+                    auth_url, _ = gmail_begin_web_auth(GMAIL_REDIRECT_URI)
                     st.link_button("Reconnect Gmail", auth_url, type="primary", use_container_width=True)
                 except Exception as e:
                     st.error(f"Reconnect setup failed: {e}")
