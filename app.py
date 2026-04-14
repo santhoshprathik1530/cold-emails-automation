@@ -420,8 +420,14 @@ DEFAULT_TEMPLATE = """
     </p>
 
     <p>
-        If there are openings or if you could direct me to the right team, I would greatly
-        appreciate it.
+        I’m especially interested in roles where I can work with data end-to-end by building
+        data pipelines, creating analytics and visualizations, developing ML models, and
+        supporting AI-driven applications.
+    </p>
+
+    <p>
+        If there is a relevant opening, I would be grateful for the opportunity to be considered.
+        If not, I would also appreciate it if you could point me to the appropriate recruiter or team.
     </p>
 
     <p>I have included my profile details below:</p>
