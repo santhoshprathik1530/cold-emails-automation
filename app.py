@@ -399,7 +399,7 @@ def _clear_query_params():
 
 
 # DEFAULTS — subject + HTML template (kept simple and ASCII-safe)
-DEFAULT_SUBJECT = "Summer 2026 Internship - Data Analytics / DS / AI | Santhosh Prathik Kasam"
+DEFAULT_SUBJECT = "Summer or Fall 2026 Co-op - Data Analytics / Data Engineering / ML / AI | Santhosh Prathik Kasam"
 
 DEFAULT_TEMPLATE = """
 <div style="font-family: Arial, sans-serif; font-size: 14px; color: #222; max-width: 600px; line-height: 1.7;">
@@ -409,14 +409,14 @@ DEFAULT_TEMPLATE = """
     <p>
         I'm <strong>Santhosh Prathik Kasam</strong>, a Masters Data Science student at the
         University of Illinois Chicago (GPA 4.0, graduating Dec 2026), reaching out to ask if
-        <strong>{company}</strong> has any <strong>Summer 2026 internship opportunities</strong> in
-        Data Analytics, Data Science, or AI.
+        <strong>{company}</strong> has any <strong>Summer or Fall 2026 co-op opportunities</strong> in
+        Data Analytics, Data Engineering, Machine Learning or AI.
     </p>
 
     <p>
         I am currently based in <strong>Chicago</strong> and available full-time from
-        <strong>May-August 2026</strong>, open to relocating anywhere in the United States for the
-        right opportunity. I also have work authorization for internship roles in the U.S.
+        <strong>Summer or Fall 2026</strong>, open to relocating anywhere in the United States for the
+        right opportunity. I also have work authorization for co-op roles in the U.S.
     </p>
 
     <p>
