@@ -414,15 +414,15 @@ DEFAULT_TEMPLATE = """
     </p>
 
     <p>
-        I am currently based in <strong>Chicago</strong> and available full-time from
-        <strong>Summer or Fall 2026</strong>, open to relocating anywhere in the United States for the
-        right opportunity. I also have work authorization for co-op roles in the U.S.
-    </p>
-
-    <p>
         I’m especially interested in roles where I can work with data end-to-end by building
         data pipelines, creating analytics and visualizations, developing ML models, and
         supporting AI-driven applications.
+    </p>
+
+    <p>
+        I am currently based in <strong>Chicago</strong> and available full-time from
+        <strong>Summer or Fall 2026</strong>, open to relocating anywhere in the United States for the
+        right opportunity. I also have work authorization for co-op roles in the U.S.
     </p>
 
     <p>
