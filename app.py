@@ -399,7 +399,7 @@ def _clear_query_params():
 
 
 # DEFAULTS — subject + HTML template (kept simple and ASCII-safe)
-DEFAULT_SUBJECT = "Summer or Fall 2026 Co-op - Data Analytics / Data Engineering / ML / AI | Santhosh Prathik Kasam"
+DEFAULT_SUBJECT = "Summer or Fall 2026 Internship - Data Analytics / Data Engineering / ML / AI | Santhosh Prathik Kasam"
 
 DEFAULT_TEMPLATE = """
 <div style="font-family: Arial, sans-serif; font-size: 14px; color: #222; max-width: 600px; line-height: 1.7;">
@@ -409,7 +409,7 @@ DEFAULT_TEMPLATE = """
     <p>
         I'm <strong>Santhosh Prathik Kasam</strong>, a Masters Data Science student at the
         University of Illinois Chicago (GPA 4.0, graduating Dec 2026), reaching out to ask if
-        <strong>{company}</strong> has any <strong>Summer or Fall 2026 co-op opportunities</strong> in
+        <strong>{company}</strong> has any <strong>Summer or Fall 2026 internship opportunities</strong> in
         Data Analytics, Data Engineering, Machine Learning or AI.
     </p>
 
@@ -422,7 +422,7 @@ DEFAULT_TEMPLATE = """
     <p>
         I am currently based in <strong>Chicago</strong> and available full-time from
         <strong>Summer or Fall 2026</strong>, open to relocating anywhere in the United States for the
-        right opportunity. I also have work authorization for co-op roles in the U.S.
+        right opportunity. I also have work authorization for internship roles in the U.S.
     </p>
 
     <p>
@@ -1016,7 +1016,15 @@ with tab_find:
                 )
             with dl2:
                 if valid and st.button("📧 Queue for Sending", type="primary", key="queue_btn"):
-                    st.session_state.send_contacts = valid
+                    queued = []
+                    for p in valid:
+                        q = dict(p)
+                        if not q.get("company"):
+                            org = q.get("organization")
+                            if isinstance(org, dict):
+                                q["company"] = org.get("name") or ""
+                        queued.append(q)
+                    st.session_state.send_contacts = queued
                     st.success(f"✅ {len(valid)} contacts queued — go to the Send tab")
     else:
         st.markdown(
