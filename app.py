@@ -802,10 +802,10 @@ with tab_find:
         return matches
 
     def _save_contacts(people: list) -> int:
-        rows = []
+        deduped = {}
         for p in people:
             org = p.get("organization") or {}
-            rows.append({
+            row = {
                 "apollo_id":       p.get("id"),
                 "first_name":      p.get("first_name"),
                 "last_name":       p.get("last_name"),
@@ -821,7 +821,11 @@ with tab_find:
                 "city":            p.get("city"),
                 "state":           p.get("state"),
                 "country":         p.get("country"),
-            })
+            }
+            key = row.get("apollo_id") or row.get("email") or row.get("linkedin_url") or row.get("name")
+            if key:
+                deduped[key] = row
+        rows = list(deduped.values())
         if rows and sb_insert("hr_contacts", rows, upsert=True, on_conflict="apollo_id"):
             return len(rows)
         return 0
