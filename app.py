@@ -312,20 +312,49 @@ def sb_get(table: str, params: str = "") -> list:
         return []
 
 
-def sb_insert(table: str, rows: list | dict, upsert: bool = False) -> bool:
+_LAST_SB_ERROR = ""
+
+
+def sb_last_error() -> str:
+    return _LAST_SB_ERROR
+
+
+def sb_insert(table: str, rows: list | dict, upsert: bool = False, on_conflict: str = "") -> bool:
+    global _LAST_SB_ERROR
+    _LAST_SB_ERROR = ""
     if not SB_URL or not SB_KEY:
+        _LAST_SB_ERROR = "Supabase URL or key is missing."
         return False
     prefer = "resolution=merge-duplicates,return=minimal" if upsert else "return=minimal"
+    endpoint = f"{SB_URL}/rest/v1/{table}"
+    if on_conflict:
+        endpoint += f"?on_conflict={on_conflict}"
     try:
         r = req.post(
-            f"{SB_URL}/rest/v1/{table}",
+            endpoint,
             headers=_sbh(prefer),
             json=rows,
             timeout=10,
         )
+        if r.status_code not in (200, 201):
+            _LAST_SB_ERROR = f"{r.status_code}: {r.text[:300]}"
         return r.status_code in (200, 201)
-    except Exception:
+    except Exception as e:
+        _LAST_SB_ERROR = str(e)
         return False
+
+
+def sb_existing_apollo_ids(apollo_ids: list[str]) -> set[str]:
+    ids = [i for i in apollo_ids if i]
+    if not ids or not SB_URL or not SB_KEY:
+        return set()
+    found = set()
+    for i in range(0, len(ids), 100):
+        chunk = ids[i:i + 100]
+        quoted = ",".join(f'"{x}"' for x in chunk)
+        rows = sb_get("hr_contacts", f"select=apollo_id&apollo_id=in.({quoted})")
+        found.update(r.get("apollo_id") for r in rows if r.get("apollo_id"))
+    return found
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -793,7 +822,7 @@ with tab_find:
                 "state":           p.get("state"),
                 "country":         p.get("country"),
             })
-        if rows and sb_insert("hr_contacts", rows, upsert=True):
+        if rows and sb_insert("hr_contacts", rows, upsert=True, on_conflict="apollo_id"):
             return len(rows)
         return 0
 
@@ -912,6 +941,19 @@ with tab_find:
             to_enrich = ([st.session_state.search_results[i] for i in checked]
                          if checked else st.session_state.search_results)
 
+        candidate_ids = [p.get("id") for p in to_enrich if p.get("id")]
+        existing_ids = sb_existing_apollo_ids(candidate_ids)
+        skipped_existing = len(existing_ids)
+        to_enrich = [p for p in to_enrich if p.get("id") not in existing_ids]
+
+        if skipped_existing:
+            st.info(f"Skipping {skipped_existing} contact{'s' if skipped_existing != 1 else ''} already saved in hr_contacts.")
+
+        if not to_enrich:
+            st.session_state.enriched_results = []
+            st.warning("All selected contacts already exist in hr_contacts. No new Apollo enrichment call was made.")
+            st.stop()
+
         with st.spinner(f"Enriching {len(to_enrich)} contacts (uses Apollo credits)..."):
             enriched = _enrich_people(to_enrich)
         st.session_state.enriched_results = enriched
@@ -922,7 +964,11 @@ with tab_find:
             with_email = [p for p in enriched if p.get("email")]
             st.success(
                 f"✅ {len(enriched)} enriched · {len(with_email)} have emails"
-                + (f" · {saved} saved to DB" if saved else " · (DB save failed — check Supabase config)")
+                + (
+                    f" · {saved} saved to DB"
+                    if saved else
+                    f" · (DB save failed: {sb_last_error() or 'unknown Supabase error'})"
+                )
             )
 
     # ── Display results ──────────────────────────────────────────────────────
