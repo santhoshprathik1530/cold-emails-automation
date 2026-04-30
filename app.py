@@ -290,7 +290,7 @@ def _cfg(key: str, fallback: str = "") -> str:
         return fallback
 
 
-APOLLO_KEY   = _cfg("APOLLO_API_KEY", "l8TMBu3V3n6o8aDuENZcNA")
+APOLLO_KEY   = _cfg("APOLLO_API_KEY", "")
 SB_URL       = _cfg("SUPABASE_URL")
 SB_KEY       = _cfg("SUPABASE_KEY")
 _SB_FN_BASE  = f"{SB_URL}/functions/v1" if SB_URL else ""
@@ -310,6 +310,8 @@ APOLLO_H = {
     "accept": "application/json",
     "x-api-key": APOLLO_KEY,
 }
+
+_LAST_APOLLO_ERROR = ""
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -807,13 +809,50 @@ with tab_find:
     # ── API functions ────────────────────────────────────────────────────────
 
     def _search_companies(query: str) -> list:
-        r = req.post(
-            "https://api.apollo.io/api/v1/mixed_companies/search",
-            headers=APOLLO_H,
-            json={"q_organization_name": query, "page": 1, "per_page": 10},
-            timeout=15,
+        global _LAST_APOLLO_ERROR
+        _LAST_APOLLO_ERROR = ""
+        if not APOLLO_KEY:
+            _LAST_APOLLO_ERROR = "Apollo API key is missing."
+            return []
+        try:
+            r = req.post(
+                "https://api.apollo.io/api/v1/mixed_companies/search",
+                headers=APOLLO_H,
+                json={"q_organization_name": query, "page": 1, "per_page": 10},
+                timeout=15,
+            )
+            if r.status_code == 200:
+                return r.json().get("organizations", [])
+            _LAST_APOLLO_ERROR = f"{r.status_code}: {r.text[:200]}"
+            return []
+        except Exception as e:
+            _LAST_APOLLO_ERROR = str(e)
+            return []
+
+    def _search_companies_from_db(query: str) -> list:
+        if not query.strip():
+            return []
+        pattern = quote_plus(f"*{query.strip()}*")
+        rows = sb_get(
+            "hr_contacts",
+            f"select=organization_id,company,city&company=ilike.{pattern}&organization_id=not.is.null&limit=100",
         )
-        return r.json().get("organizations", []) if r.status_code == 200 else []
+        seen = {}
+        for row in rows:
+            org_id = row.get("organization_id")
+            company = row.get("company")
+            if not org_id or not company:
+                continue
+            key = (org_id, company)
+            if key not in seen:
+                seen[key] = {
+                    "id": org_id,
+                    "name": company,
+                    "primary_domain": "Saved in DB",
+                    "estimated_num_employees": "—",
+                    "city": row.get("city") or "—",
+                }
+        return list(seen.values())
 
     def _search_people(org_ids, locations, titles, target) -> list:
         all_p, per = [], 100
@@ -909,6 +948,11 @@ with tab_find:
     if co_btn and company_q:
         with st.spinner(f"Searching Apollo for '{company_q}'..."):
             orgs = _search_companies(company_q)
+        source_note = "Apollo"
+        if not orgs and _LAST_APOLLO_ERROR:
+            orgs = _search_companies_from_db(company_q)
+            if orgs:
+                source_note = "Saved contacts DB"
         if orgs:
             org_df = pd.DataFrame([{
                 "Org ID":    o.get("id", "—"),
@@ -918,9 +962,12 @@ with tab_find:
                 "City":      o.get("city", "—"),
             } for o in orgs])
             st.dataframe(org_df, width="stretch", hide_index=True)
-            st.caption("📋 Copy an Org ID from the table above and paste it into the field below.")
+            st.caption(f"📋 Source: {source_note}. Copy an Org ID from the table above and paste it into the field below.")
         else:
-            st.warning("No companies found — try a shorter name.")
+            if _LAST_APOLLO_ERROR:
+                st.error(f"Apollo company lookup failed: {_LAST_APOLLO_ERROR}")
+            else:
+                st.warning("No companies found — try a shorter name.")
 
     st.markdown('<hr class="divider">', unsafe_allow_html=True)
 
