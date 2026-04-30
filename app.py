@@ -43,7 +43,7 @@ st.markdown("""
 *, body, .stApp { font-family: 'Inter', sans-serif !important; }
 .stApp { background: #06070b; }
 #MainMenu, footer, header { visibility: hidden; }
-.block-container { padding-top: 1.5rem; padding-bottom: 2rem; max-width: 1200px; }
+.block-container { padding-top: 1.25rem; padding-bottom: 2.25rem; max-width: 1180px; }
 
 /* ── Scrollbar ─────────────────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -55,13 +55,13 @@ st.markdown("""
 div[data-baseweb="input"] input,
 div[data-baseweb="textarea"] textarea,
 div[data-baseweb="select"] {
-    background: #0c0d14 !important; border-color: #16182a !important;
+    background: #0c0d14 !important; border-color: #171a28 !important;
     color: #c8cce0 !important; border-radius: 10px !important;
-    font-size: 0.85rem !important; transition: border-color 0.2s;
+    font-size: 0.84rem !important; transition: border-color 0.2s, box-shadow 0.2s;
 }
 div[data-baseweb="input"] input:focus,
 div[data-baseweb="textarea"] textarea:focus {
-    border-color: #5a5fcf !important; box-shadow: 0 0 0 1px rgba(90,95,207,0.15) !important;
+    border-color: #6a6fd8 !important; box-shadow: 0 0 0 1px rgba(106,111,216,0.14) !important;
 }
 div[data-baseweb="tag"] { background: #393ea8 !important; border-radius: 6px !important; }
 input::placeholder, textarea::placeholder { color: #2a2f47 !important; }
@@ -74,22 +74,22 @@ label, .stTextInput label, .stMultiSelect label,
 
 /* ── Buttons ───────────────────────────────────────────────────────────── */
 .stButton > button {
-    background: rgba(255,255,255,0.02); border: 1px solid #16182a; color: #5a5f7a;
+    background: rgba(255,255,255,0.02); border: 1px solid #171a28; color: #727894;
     border-radius: 10px; font-size: 0.78rem; font-weight: 500;
-    padding: 0.5rem 1.1rem; transition: all 0.2s ease;
+    padding: 0.5rem 1.05rem; transition: all 0.18s ease;
 }
 .stButton > button:hover {
-    border-color: #5a5fcf; color: #9fa3e8;
-    background: rgba(90,95,207,0.06); transform: translateY(-1px);
+    border-color: #343956; color: #c1c5da;
+    background: rgba(255,255,255,0.03); transform: translateY(-1px);
 }
 .stButton > button[kind="primary"] {
-    background: linear-gradient(135deg, #5a5fcf 0%, #7c6fd4 100%);
-    border: none; color: #fff; font-weight: 600;
-    box-shadow: 0 2px 12px rgba(90,95,207,0.25);
+    background: linear-gradient(135deg, #5960ca 0%, #7167c7 100%);
+    border: 1px solid rgba(255,255,255,0.04); color: #fff; font-weight: 600;
+    box-shadow: 0 1px 10px rgba(89,96,202,0.22);
 }
 .stButton > button[kind="primary"]:hover {
-    background: linear-gradient(135deg, #4a4fbf 0%, #6c5fc4 100%);
-    box-shadow: 0 4px 20px rgba(90,95,207,0.35); transform: translateY(-1px);
+    background: linear-gradient(135deg, #5058c1 0%, #6a61be 100%);
+    box-shadow: 0 4px 16px rgba(89,96,202,0.26); transform: translateY(-1px);
 }
 .stButton > button:disabled { opacity: 0.3 !important; cursor: not-allowed !important; transform: none !important; }
 
@@ -99,13 +99,13 @@ label, .stTextInput label, .stMultiSelect label,
 }
 
 /* ── Divider ───────────────────────────────────────────────────────────── */
-.divider { border: none; border-top: 1px solid #0f1120; margin: 1.8rem 0; }
+.divider { border: none; border-top: 1px solid #111423; margin: 1.4rem 0 1.55rem; }
 
 /* ── Cards & Metrics ───────────────────────────────────────────────────── */
 .glass-card {
     background: linear-gradient(145deg, rgba(15,17,23,0.9), rgba(12,13,20,0.95));
-    border: 1px solid #14162a; border-radius: 14px;
-    padding: 1.6rem; backdrop-filter: blur(10px);
+    border: 1px solid #171a28; border-radius: 14px;
+    padding: 1.35rem 1.45rem; backdrop-filter: blur(10px);
 }
 
 .metric-wrap {
@@ -140,8 +140,8 @@ label, .stTextInput label, .stMultiSelect label,
 /* ── Stat mini-cards ───────────────────────────────────────────────────── */
 .stat {
     background: linear-gradient(145deg, #0c0d14, #0f1117);
-    border: 1px solid #14162a; border-radius: 12px;
-    padding: 1rem 1.2rem; text-align: center;
+    border: 1px solid #171a28; border-radius: 12px;
+    padding: 0.9rem 1.15rem; text-align: center;
     transition: border-color 0.2s;
 }
 .stat:hover { border-color: #1e2240; }
@@ -155,17 +155,17 @@ label, .stTextInput label, .stMultiSelect label,
     color: #3a3f55; font-weight: 600; margin-bottom: 0.6rem;
 }
 .sec-title {
-    font-size: 0.9rem; font-weight: 600; color: #c8cce0;
+    font-size: 0.92rem; font-weight: 600; color: #d4d8e8;
     margin-bottom: 0.2rem; display: flex; align-items: center; gap: 0.5rem;
 }
-.sec-desc { font-size: 0.78rem; color: #3a3f55; margin-bottom: 1rem; }
+.sec-desc { font-size: 0.77rem; color: #5e657f; margin-bottom: 0.9rem; }
 
 /* ── Step indicators ───────────────────────────────────────────────────── */
 .step-badge {
     display: inline-flex; align-items: center; justify-content: center;
     width: 22px; height: 22px; border-radius: 7px; font-size: 0.65rem;
     font-weight: 700; flex-shrink: 0;
-    background: linear-gradient(135deg, #5a5fcf, #7c6fd4); color: #fff;
+    background: linear-gradient(135deg, #575fc8, #7066c3); color: #fff;
 }
 
 /* ── Expanders ─────────────────────────────────────────────────────────── */
@@ -181,6 +181,26 @@ div[data-testid="stExpander"] {
 }
 .pill-ok  { background: rgba(62,207,142,0.1); color: #3ecf8e; border: 1px solid rgba(62,207,142,0.15); }
 .pill-err { background: rgba(248,113,113,0.1); color: #f87171; border: 1px solid rgba(248,113,113,0.15); }
+
+/* ── Workflow strip ───────────────────────────────────────────────────── */
+.workflow-strip {
+    display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.8rem; margin: 0.25rem 0 1.2rem;
+}
+.workflow-chip {
+    background: linear-gradient(180deg, rgba(15,17,23,0.92), rgba(12,13,20,0.96));
+    border: 1px solid #171a28; border-radius: 12px; padding: 0.8rem 0.95rem;
+}
+.workflow-label {
+    font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase;
+    color: #6b728d; font-weight: 700; margin-bottom: 0.28rem;
+}
+.workflow-value {
+    font-size: 1.1rem; color: #eef1f8; font-weight: 600; line-height: 1.1;
+}
+.workflow-sub {
+    font-size: 0.72rem; color: #7f87a5; margin-top: 0.2rem;
+}
 
 /* ── Tabs ──────────────────────────────────────────────────────────────── */
 button[data-baseweb="tab"] {
@@ -204,9 +224,9 @@ div[data-baseweb="tab-border"] { background-color: #0f1120 !important; }
 
 /* ── Auth gate ─────────────────────────────────────────────────────────── */
 .auth-gate {
-    text-align: center; padding: 5rem 2rem;
+    text-align: center; padding: 4.2rem 1.8rem;
     background: radial-gradient(ellipse at center, rgba(90,95,207,0.04) 0%, transparent 70%);
-    border-radius: 20px;
+    border: 1px solid #171a28; border-radius: 18px;
 }
 .auth-gate-icon { font-size: 2.5rem; margin-bottom: 1rem; opacity: 0.8; }
 .auth-gate-title { color: #c8cce0; font-size: 1.1rem; font-weight: 600; margin-bottom: 0.3rem; }
@@ -214,7 +234,8 @@ div[data-baseweb="tab-border"] { background-color: #0f1120 !important; }
 
 /* ── Empty states ──────────────────────────────────────────────────────── */
 .empty-state {
-    text-align: center; padding: 4rem 2rem; color: #2a2f47; font-size: 0.85rem;
+    text-align: center; padding: 3.4rem 1.8rem; color: #5d647c; font-size: 0.84rem;
+    border: 1px dashed #171a28; border-radius: 16px;
 }
 
 /* ── Brand ─────────────────────────────────────────────────────────────── */
@@ -240,7 +261,15 @@ div[data-baseweb="tab-border"] { background-color: #0f1120 !important; }
 .stProgress > div > div > div { background: linear-gradient(90deg, #5a5fcf, #7c6fd4) !important; border-radius: 10px; }
 
 /* ── Alerts ────────────────────────────────────────────────────────────── */
-div[data-baseweb="notification"] { border-radius: 10px !important; }
+div[data-baseweb="notification"] {
+    border-radius: 10px !important;
+    border: 1px solid #1a1f31 !important;
+    background: rgba(12,13,20,0.92) !important;
+}
+
+@media (max-width: 900px) {
+    .workflow-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 
 </style>
 """, unsafe_allow_html=True)
@@ -710,6 +739,39 @@ with h3:
     else:
         if st.button("Sign in", width="stretch", key="signin_header_btn"):
             _show_login_dialog()
+
+workflow_found = len(st.session_state.get("search_results", []))
+workflow_enriched = len(st.session_state.get("enriched_results", []))
+workflow_queued = len(st.session_state.get("send_contacts", []))
+workflow_gmail = "Connected" if is_gmail else "Needs auth"
+
+st.markdown(
+    f"""
+    <div class="workflow-strip">
+        <div class="workflow-chip">
+            <div class="workflow-label">Found</div>
+            <div class="workflow-value">{workflow_found}</div>
+            <div class="workflow-sub">search results</div>
+        </div>
+        <div class="workflow-chip">
+            <div class="workflow-label">Enriched</div>
+            <div class="workflow-value">{workflow_enriched}</div>
+            <div class="workflow-sub">Apollo matches</div>
+        </div>
+        <div class="workflow-chip">
+            <div class="workflow-label">Queued</div>
+            <div class="workflow-value">{workflow_queued}</div>
+            <div class="workflow-sub">ready to send</div>
+        </div>
+        <div class="workflow-chip">
+            <div class="workflow-label">Gmail</div>
+            <div class="workflow-value">{workflow_gmail}</div>
+            <div class="workflow-sub">delivery status</div>
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
 st.markdown('<hr class="divider">', unsafe_allow_html=True)
 
