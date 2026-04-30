@@ -993,6 +993,14 @@ with tab_find:
     with lc2:
         titles = st.multiselect("Title keywords", HR_TITLES_ALL, default=HR_TITLES_DEF, key="find_titles")
 
+    custom_locations_raw = st.text_input(
+        "Custom locations",
+        placeholder="Add custom cities or regions, comma-separated",
+        key="find_custom_locs",
+    )
+    custom_locations = [x.strip().lower() for x in custom_locations_raw.split(",") if x.strip()]
+    combined_locations = list(dict.fromkeys([*(locations or []), *custom_locations]))
+
     st.markdown("<br style='line-height:0.2'>", unsafe_allow_html=True)
 
     has_results  = bool(st.session_state.search_results)
@@ -1012,13 +1020,13 @@ with tab_find:
         org_ids = [o.strip() for o in org_ids_raw.split(",") if o.strip()]
         if not org_ids:
             st.error("Enter at least one Org ID.")
-        elif not locations:
+        elif not combined_locations:
             st.error("Select at least one location.")
         elif not titles:
             st.error("Select at least one title keyword.")
         else:
             with st.spinner(f"Searching for up to {target_count} HR contacts..."):
-                results = _search_people(org_ids, locations, titles, target_count)
+                results = _search_people(org_ids, combined_locations, titles, target_count)
             st.session_state.search_results  = results
             st.session_state.enriched_results = []
             st.session_state.select_all = False
